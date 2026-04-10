@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Asset, AssetCategory, Currency, MacroAllocation, MACRO_CATEGORIES } from '@/types/portfolio';
+import { Asset, AssetCategory, Currency, MacroAllocation, MacroCategory, MACRO_CATEGORIES } from '@/types/portfolio';
 
 interface CategoryTarget {
   [key: string]: number;
