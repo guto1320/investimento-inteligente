@@ -114,9 +114,37 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setCategoryTargets(prev => ({ ...prev, [cat]: pct }));
   }, []);
 
-  const addAsset = useCallback((asset: Omit<Asset, 'id'>) => {
-    setAssets(prev => [...prev, { ...asset, id: crypto.randomUUID() }]);
+  const fetchTickerPrice = useCallback(async (ticker: string, isBrazilian: boolean) => {
+    try {
+      const suffix = isBrazilian ? '.SA' : '';
+      // Try brapi first
+      const resp = await fetch(`https://brapi.dev/api/quote/${ticker}?token=demo`);
+      const data = await resp.json();
+      if (data.results?.[0]?.regularMarketPrice) {
+        return {
+          price: data.results[0].regularMarketPrice,
+          currency: (data.results[0].currency === 'BRL' ? 'BRL' : 'USD') as Currency,
+        };
+      }
+    } catch { /* silent */ }
+    return null;
   }, []);
+
+  const addAsset = useCallback((asset: Omit<Asset, 'id'>) => {
+    const id = crypto.randomUUID();
+    const newAsset = { ...asset, id };
+    setAssets(prev => [...prev, newAsset]);
+
+    // Auto-fetch price
+    const isBrazilian = asset.category.startsWith('br_');
+    setIsLoadingPrices(true);
+    fetchTickerPrice(asset.ticker, isBrazilian).then(result => {
+      if (result) {
+        setAssets(prev => prev.map(a => a.id === id ? { ...a, currentPrice: result.price, priceCurrency: result.currency } : a));
+      }
+      setIsLoadingPrices(false);
+    });
+  }, [fetchTickerPrice]);
 
   const removeAsset = useCallback((id: string) => {
     setAssets(prev => prev.filter(a => a.id !== id));
