@@ -244,52 +244,22 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const refreshPrices = useCallback(async () => {
     setIsLoadingPrices(true);
     try {
-      // Try fetching prices from a free API
       const tickers = assets.map(a => a.ticker);
       if (tickers.length === 0) return;
 
-      // Use Yahoo Finance via a CORS proxy or similar
-      // For now, we'll try brapi.dev for Brazilian assets and a proxy for international
-      const brAssets = assets.filter(a => a.category.startsWith('br_'));
-      const extAssets = assets.filter(a => a.category.startsWith('ext_'));
-
-      // Brazilian assets via brapi
-      if (brAssets.length > 0) {
-        try {
-          const brTickers = brAssets.map(a => a.ticker).join(',');
-          const resp = await fetch(`https://brapi.dev/api/quote/${brTickers}?token=demo`);
-          const data = await resp.json();
-          if (data.results) {
-            for (const result of data.results) {
-              const asset = assets.find(a => a.ticker.toUpperCase() === result.symbol?.toUpperCase());
-              if (asset && result.regularMarketPrice) {
-                updateAsset(asset.id, { currentPrice: result.regularMarketPrice, priceCurrency: 'BRL' });
-              }
-            }
+      const results = await fetchTickerPrices(tickers);
+      if (results) {
+        for (const asset of assets) {
+          const r = results[asset.ticker];
+          if (r && r.price > 0) {
+            updateAsset(asset.id, { currentPrice: r.price, priceCurrency: r.currency as Currency });
           }
-        } catch { /* silent fail */ }
-      }
-
-      // International assets - try brapi as well (it supports some US stocks)
-      if (extAssets.length > 0) {
-        try {
-          const extTickers = extAssets.map(a => a.ticker).join(',');
-          const resp = await fetch(`https://brapi.dev/api/quote/${extTickers}?token=demo`);
-          const data = await resp.json();
-          if (data.results) {
-            for (const result of data.results) {
-              const asset = assets.find(a => a.ticker.toUpperCase() === result.symbol?.toUpperCase());
-              if (asset && result.regularMarketPrice) {
-                updateAsset(asset.id, { currentPrice: result.regularMarketPrice, priceCurrency: result.currency === 'BRL' ? 'BRL' : 'USD' });
-              }
-            }
-          }
-        } catch { /* silent fail */ }
+        }
       }
     } finally {
       setIsLoadingPrices(false);
     }
-  }, [assets, updateAsset]);
+  }, [assets, updateAsset, fetchTickerPrices]);
 
   return (
     <PortfolioContext.Provider value={{
