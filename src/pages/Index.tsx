@@ -4,6 +4,7 @@ import { MacroAllocation } from '@/components/MacroAllocation';
 import { AssetManager } from '@/components/AssetManager';
 import { NextInvestment } from '@/components/NextInvestment';
 import { PortfolioOverview } from '@/components/PortfolioOverview';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/context/AuthContext';
 import { TrendingUp, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,8 +26,9 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground">Gestão inteligente de aportes</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <CurrencySelector />
+              <ThemeToggle />
               <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-muted-foreground">
                 <LogOut className="w-4 h-4" />
               </Button>
