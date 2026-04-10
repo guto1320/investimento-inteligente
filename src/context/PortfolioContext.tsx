@@ -222,7 +222,14 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   const updateAsset = useCallback(async (id: string, updates: Partial<Asset>) => {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-    const dbUpdates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const dbUpdates: {
+      updated_at: string;
+      quantity?: number;
+      current_price?: number;
+      price_currency?: string;
+      target_weight?: number;
+      category?: string;
+    } = { updated_at: new Date().toISOString() };
     if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
     if (updates.currentPrice !== undefined) dbUpdates.current_price = updates.currentPrice;
     if (updates.priceCurrency !== undefined) dbUpdates.price_currency = updates.priceCurrency;
