@@ -114,20 +114,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setCategoryTargets(prev => ({ ...prev, [cat]: pct }));
   }, []);
 
-  const fetchTickerPrice = useCallback(async (ticker: string, isBrazilian: boolean) => {
+  const fetchTickerPrices = useCallback(async (tickers: string[]) => {
     try {
-      const suffix = isBrazilian ? '.SA' : '';
-      // Try brapi first
-      const resp = await fetch(`https://brapi.dev/api/quote/${ticker}?token=demo`);
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-prices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ tickers }),
+      });
       const data = await resp.json();
-      if (data.results?.[0]?.regularMarketPrice) {
-        return {
-          price: data.results[0].regularMarketPrice,
-          currency: (data.results[0].currency === 'BRL' ? 'BRL' : 'USD') as Currency,
-        };
-      }
-    } catch { /* silent */ }
-    return null;
+      return data.results as Record<string, { price: number; currency: string }> | null;
+    } catch { return null; }
   }, []);
 
   const addAsset = useCallback((asset: Omit<Asset, 'id'>) => {
@@ -136,15 +135,15 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setAssets(prev => [...prev, newAsset]);
 
     // Auto-fetch price
-    const isBrazilian = asset.category.startsWith('br_');
     setIsLoadingPrices(true);
-    fetchTickerPrice(asset.ticker, isBrazilian).then(result => {
-      if (result) {
-        setAssets(prev => prev.map(a => a.id === id ? { ...a, currentPrice: result.price, priceCurrency: result.currency } : a));
+    fetchTickerPrices([asset.ticker]).then(results => {
+      if (results && results[asset.ticker]) {
+        const r = results[asset.ticker];
+        setAssets(prev => prev.map(a => a.id === id ? { ...a, currentPrice: r.price, priceCurrency: r.currency as Currency } : a));
       }
       setIsLoadingPrices(false);
     });
-  }, [fetchTickerPrice]);
+  }, [fetchTickerPrices]);
 
   const removeAsset = useCallback((id: string) => {
     setAssets(prev => prev.filter(a => a.id !== id));
@@ -245,52 +244,22 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const refreshPrices = useCallback(async () => {
     setIsLoadingPrices(true);
     try {
-      // Try fetching prices from a free API
       const tickers = assets.map(a => a.ticker);
       if (tickers.length === 0) return;
 
-      // Use Yahoo Finance via a CORS proxy or similar
-      // For now, we'll try brapi.dev for Brazilian assets and a proxy for international
-      const brAssets = assets.filter(a => a.category.startsWith('br_'));
-      const extAssets = assets.filter(a => a.category.startsWith('ext_'));
-
-      // Brazilian assets via brapi
-      if (brAssets.length > 0) {
-        try {
-          const brTickers = brAssets.map(a => a.ticker).join(',');
-          const resp = await fetch(`https://brapi.dev/api/quote/${brTickers}?token=demo`);
-          const data = await resp.json();
-          if (data.results) {
-            for (const result of data.results) {
-              const asset = assets.find(a => a.ticker.toUpperCase() === result.symbol?.toUpperCase());
-              if (asset && result.regularMarketPrice) {
-                updateAsset(asset.id, { currentPrice: result.regularMarketPrice, priceCurrency: 'BRL' });
-              }
-            }
+      const results = await fetchTickerPrices(tickers);
+      if (results) {
+        for (const asset of assets) {
+          const r = results[asset.ticker];
+          if (r && r.price > 0) {
+            updateAsset(asset.id, { currentPrice: r.price, priceCurrency: r.currency as Currency });
           }
-        } catch { /* silent fail */ }
-      }
-
-      // International assets - try brapi as well (it supports some US stocks)
-      if (extAssets.length > 0) {
-        try {
-          const extTickers = extAssets.map(a => a.ticker).join(',');
-          const resp = await fetch(`https://brapi.dev/api/quote/${extTickers}?token=demo`);
-          const data = await resp.json();
-          if (data.results) {
-            for (const result of data.results) {
-              const asset = assets.find(a => a.ticker.toUpperCase() === result.symbol?.toUpperCase());
-              if (asset && result.regularMarketPrice) {
-                updateAsset(asset.id, { currentPrice: result.regularMarketPrice, priceCurrency: result.currency === 'BRL' ? 'BRL' : 'USD' });
-              }
-            }
-          }
-        } catch { /* silent fail */ }
+        }
       }
     } finally {
       setIsLoadingPrices(false);
     }
-  }, [assets, updateAsset]);
+  }, [assets, updateAsset, fetchTickerPrices]);
 
   return (
     <PortfolioContext.Provider value={{
