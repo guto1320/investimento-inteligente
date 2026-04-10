@@ -18,7 +18,7 @@ const Index = () => {
       <div className="min-h-screen bg-background">
         <header className="border-b border-border">
           <div className="container max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Aportes</h1>
+            <h1 className="text-xl font-bold text-foreground">Assistente de Aportes</h1>
             <div className="flex items-center gap-2">
               <CurrencySelector />
               <PaletteSelector />
