@@ -153,6 +153,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
                   <span className="text-xs text-muted-foreground shrink-0">Qtd:</span>
                   <Input
                     type="number"
+                    step="any"
                     value={asset.quantity}
                     onChange={e => onUpdateQuantity(asset.id, parseFloat(e.target.value) || 0)}
                     className="h-7 text-xs w-24"
@@ -187,6 +188,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
             />
             <Input
               type="number"
+              step="any"
               placeholder="Qtd"
               value={newQty}
               onChange={e => setNewQty(e.target.value)}
