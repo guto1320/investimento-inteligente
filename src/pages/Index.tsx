@@ -4,9 +4,13 @@ import { MacroAllocation } from '@/components/MacroAllocation';
 import { AssetManager } from '@/components/AssetManager';
 import { NextInvestment } from '@/components/NextInvestment';
 import { PortfolioOverview } from '@/components/PortfolioOverview';
-import { TrendingUp } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { TrendingUp, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Index = () => {
+  const { signOut, user } = useAuth();
+
   return (
     <PortfolioProvider>
       <div className="min-h-screen bg-background">
@@ -21,7 +25,12 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground">Gestão inteligente de aportes</p>
               </div>
             </div>
-            <CurrencySelector />
+            <div className="flex items-center gap-3">
+              <CurrencySelector />
+              <Button variant="ghost" size="sm" onClick={signOut} className="gap-1.5 text-muted-foreground">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </header>
 
