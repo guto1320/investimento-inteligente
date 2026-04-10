@@ -72,7 +72,7 @@ export function ImportAssets() {
               Um ativo por linha: <span className="font-mono">TICKER QUANTIDADE</span>
             </p>
             <Textarea
-              placeholder={"PETR4 100\nVALE3 50\nWEGE3 200\nITUB4 150"}
+              placeholder={"PETR4 100,5\nVALE3 50\nWEGE3 200,75\nITUB4 150"}
               value={text}
               onChange={e => setText(e.target.value)}
               rows={8}
