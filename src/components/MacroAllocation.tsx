@@ -2,15 +2,29 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { Slider } from '@/components/ui/slider';
 import { MACRO_CATEGORIES, CATEGORY_LABELS, AssetCategory } from '@/types/portfolio';
 import { formatCurrency } from './CurrencySelector';
-import { Globe, MapPin } from 'lucide-react';
+import { Globe, MapPin, Target } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
-  const { macroAllocation, setMacroAllocation, categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency } = usePortfolio();
+  const { macroAllocation, setMacroAllocation, categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual } = usePortfolio();
   const total = getTotalValue();
 
   return (
     <div className="glass-card p-6 space-y-6">
-      <h2 className="text-lg font-semibold text-foreground">Alocação Macro</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">Alocação Macro</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={syncTargetsToActual}
+          disabled={total === 0}
+          className="gap-1.5 text-xs"
+          title="Definir metas com base na alocação atual"
+        >
+          <Target className="w-3.5 h-3.5" />
+          Usar atual
+        </Button>
+      </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">

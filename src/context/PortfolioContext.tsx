@@ -26,6 +26,7 @@ interface PortfolioState {
   getCategoryValue: (cat: AssetCategory) => number;
   getNextInvestment: (amount: number) => { ticker: string; category: AssetCategory; amount: number; reason: string }[];
   refreshPrices: () => Promise<void>;
+  syncTargetsToActual: () => void;
   isLoadingPrices: boolean;
   isLoading: boolean;
 }
@@ -325,6 +326,32 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     return suggestions;
   }, [getTotalValue, getCategoryValue, macroAllocation, categoryTargets, assets, getValueInCurrency]);
 
+  const syncTargetsToActual = useCallback(() => {
+    const total = getTotalValue();
+    if (total === 0) return;
+
+    const brasilValue = MACRO_CATEGORIES.brasil.reduce((s, c) => s + getCategoryValue(c), 0);
+    const exteriorValue = MACRO_CATEGORIES.exterior.reduce((s, c) => s + getCategoryValue(c), 0);
+    const newMacro = {
+      brasil: Math.round((brasilValue / total) * 100),
+      exterior: Math.round((exteriorValue / total) * 100),
+    };
+    // Ensure they sum to 100
+    newMacro.exterior = 100 - newMacro.brasil;
+    setMacroAllocation(newMacro);
+
+    const newTargets: CategoryTarget = {};
+    for (const macro of ['brasil', 'exterior'] as const) {
+      const macroValue = macro === 'brasil' ? brasilValue : exteriorValue;
+      for (const cat of MACRO_CATEGORIES[macro]) {
+        const catValue = getCategoryValue(cat);
+        newTargets[cat] = macroValue > 0 ? Math.round((catValue / macroValue) * 100) : 0;
+      }
+    }
+    setCategoryTargetsState(newTargets);
+    savePortfolioSettings(currency, newMacro, newTargets);
+  }, [getTotalValue, getCategoryValue, setMacroAllocation, currency, savePortfolioSettings]);
+
   const refreshPrices = useCallback(async () => {
     setIsLoadingPrices(true);
     try {
@@ -351,7 +378,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       categoryTargets, setCategoryTarget,
       assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually,
       exchangeRates, getValueInCurrency, getTotalValue, getCategoryValue,
-      getNextInvestment, refreshPrices, isLoadingPrices, isLoading,
+      getNextInvestment, refreshPrices, syncTargetsToActual, isLoadingPrices, isLoading,
     }}>
       {children}
     </PortfolioContext.Provider>
