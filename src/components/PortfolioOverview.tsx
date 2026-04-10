@@ -4,7 +4,8 @@ import { formatCurrency } from './CurrencySelector';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export function PortfolioOverview() {
-  const { getCategoryValue, getTotalValue, currency, macroAllocation, categoryTargets } = usePortfolio();
+  const { getCategoryValue, getTotalValue, currency, categoryTargets, getMacroFromTargets } = usePortfolio();
+  const macroTargets = getMacroFromTargets();
   const total = getTotalValue();
 
   const data = Object.keys(CATEGORY_LABELS).map(cat => ({
@@ -38,20 +39,20 @@ export function PortfolioOverview() {
           <p className="text-xs text-muted-foreground">🇧🇷 Brasil</p>
           <p className="text-lg font-bold">{formatCurrency(brasilValue, currency)}</p>
           <div className="flex items-center gap-1 mt-1">
-            <span className={`text-xs font-medium ${Math.abs(brasilPct - macroAllocation.brasil) > 3 ? 'text-warning' : 'text-success'}`}>
+             <span className={`text-xs font-medium ${Math.abs(brasilPct - macroTargets.brasil) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
               {brasilPct.toFixed(1)}%
             </span>
-            <span className="text-xs text-muted-foreground">/ {macroAllocation.brasil}%</span>
+            <span className="text-xs text-muted-foreground">/ {macroTargets.brasil}%</span>
           </div>
         </div>
         <div className="bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🌎 Exterior</p>
           <p className="text-lg font-bold">{formatCurrency(exteriorValue, currency)}</p>
           <div className="flex items-center gap-1 mt-1">
-            <span className={`text-xs font-medium ${Math.abs(exteriorPct - macroAllocation.exterior) > 3 ? 'text-warning' : 'text-success'}`}>
+            <span className={`text-xs font-medium ${Math.abs(exteriorPct - macroTargets.exterior) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
               {exteriorPct.toFixed(1)}%
             </span>
-            <span className="text-xs text-muted-foreground">/ {macroAllocation.exterior}%</span>
+            <span className="text-xs text-muted-foreground">/ {macroTargets.exterior}%</span>
           </div>
         </div>
       </div>
