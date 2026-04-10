@@ -20,7 +20,7 @@ export function ImportAssets() {
       const parts = line.trim().split(/\s+/);
       if (parts.length < 2) continue;
       const ticker = parts[0].toUpperCase();
-      const qty = parseFloat(parts[1]);
+      const qty = parseFloat(parts[1].replace(',', '.'));
       if (!ticker || isNaN(qty) || qty <= 0) continue;
 
       addAsset({
