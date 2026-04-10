@@ -114,20 +114,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setCategoryTargets(prev => ({ ...prev, [cat]: pct }));
   }, []);
 
-  const fetchTickerPrice = useCallback(async (ticker: string, isBrazilian: boolean) => {
+  const fetchTickerPrices = useCallback(async (tickers: string[]) => {
     try {
-      const suffix = isBrazilian ? '.SA' : '';
-      // Try brapi first
-      const resp = await fetch(`https://brapi.dev/api/quote/${ticker}?token=demo`);
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-prices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ tickers }),
+      });
       const data = await resp.json();
-      if (data.results?.[0]?.regularMarketPrice) {
-        return {
-          price: data.results[0].regularMarketPrice,
-          currency: (data.results[0].currency === 'BRL' ? 'BRL' : 'USD') as Currency,
-        };
-      }
-    } catch { /* silent */ }
-    return null;
+      return data.results as Record<string, { price: number; currency: string }> | null;
+    } catch { return null; }
   }, []);
 
   const addAsset = useCallback((asset: Omit<Asset, 'id'>) => {
