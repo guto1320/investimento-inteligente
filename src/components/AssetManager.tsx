@@ -5,7 +5,7 @@ import { formatCurrency } from './CurrencySelector';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Scale, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Scale, RefreshCw, Loader2 } from 'lucide-react';
 
 export function AssetManager() {
   const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices } = usePortfolio();
@@ -37,23 +37,22 @@ export function AssetManager() {
               key={cat}
               category={cat}
               assets={assets.filter(a => a.category === cat)}
-              defaultCurrency={macro === 'brasil' ? 'BRL' : 'USD'}
               displayCurrency={currency}
-              onAdd={(ticker, qty, price) => addAsset({
+              onAdd={(ticker, qty) => addAsset({
                 ticker: ticker.toUpperCase(),
                 quantity: qty,
-                currentPrice: price,
+                currentPrice: 0,
                 priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
                 targetWeight: 0,
                 category: cat,
               })}
               onRemove={removeAsset}
               onUpdateQuantity={(id, qty) => updateAsset(id, { quantity: qty })}
-              onUpdatePrice={(id, price) => updateAsset(id, { currentPrice: price })}
               onUpdateWeight={updateAssetWeight}
               onDistributeEqually={() => distributeEqually(cat)}
               getValueInCurrency={getValueInCurrency}
               getCategoryValue={() => getCategoryValue(cat)}
+              isLoadingPrices={isLoadingPrices}
             />
           ))}
         </div>
@@ -62,33 +61,30 @@ export function AssetManager() {
   );
 }
 
-function CategoryBlock({ category, assets, defaultCurrency, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdatePrice, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue }: {
+function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices }: {
   category: AssetCategory;
   assets: any[];
-  defaultCurrency: Currency;
   displayCurrency: Currency;
-  onAdd: (ticker: string, qty: number, price: number) => void;
+  onAdd: (ticker: string, qty: number) => void;
   onRemove: (id: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
-  onUpdatePrice: (id: string, price: number) => void;
   onUpdateWeight: (id: string, weight: number) => void;
   onDistributeEqually: () => void;
   getValueInCurrency: (value: number, from: Currency) => number;
   getCategoryValue: () => number;
+  isLoadingPrices: boolean;
 }) {
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
-  const [newPrice, setNewPrice] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
   const catValue = getCategoryValue();
 
   const handleAdd = () => {
     if (!newTicker || !newQty) return;
-    onAdd(newTicker, parseFloat(newQty), parseFloat(newPrice) || 0);
+    onAdd(newTicker, parseFloat(newQty));
     setNewTicker('');
     setNewQty('');
-    setNewPrice('');
   };
 
   return (
@@ -122,6 +118,7 @@ function CategoryBlock({ category, assets, defaultCurrency, displayCurrency, onA
           {assets.map(asset => {
             const assetValue = getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency);
             const pct = catValue > 0 ? (assetValue / catValue) * 100 : 0;
+            const priceLoading = asset.currentPrice === 0 && isLoadingPrices;
 
             return (
               <div key={asset.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
@@ -129,34 +126,33 @@ function CategoryBlock({ category, assets, defaultCurrency, displayCurrency, onA
                   <div className="flex items-center gap-3">
                     <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
                     <span className="text-xs text-muted-foreground">
-                      {asset.quantity} un × {formatCurrency(asset.currentPrice, asset.priceCurrency)}
+                      {asset.quantity} un × {asset.currentPrice > 0
+                        ? formatCurrency(asset.currentPrice, asset.priceCurrency)
+                        : <span className="inline-flex items-center gap-1 text-warning">
+                            {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                            buscando...
+                          </span>
+                      }
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">{formatCurrency(assetValue, displayCurrency)}</span>
+                    <span className="text-sm font-medium">
+                      {asset.currentPrice > 0 ? formatCurrency(assetValue, displayCurrency) : '—'}
+                    </span>
                     <button onClick={() => onRemove(asset.id)} className="text-muted-foreground hover:text-destructive transition-colors">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-xs text-muted-foreground shrink-0">Qtd:</span>
-                    <Input
-                      type="number"
-                      value={asset.quantity}
-                      onChange={e => onUpdateQuantity(asset.id, parseFloat(e.target.value) || 0)}
-                      className="h-7 text-xs w-20"
-                    />
-                    <span className="text-xs text-muted-foreground shrink-0">Preço:</span>
-                    <Input
-                      type="number"
-                      value={asset.currentPrice}
-                      onChange={e => onUpdatePrice(asset.id, parseFloat(e.target.value) || 0)}
-                      className="h-7 text-xs w-24"
-                    />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">Qtd:</span>
+                  <Input
+                    type="number"
+                    value={asset.quantity}
+                    onChange={e => onUpdateQuantity(asset.id, parseFloat(e.target.value) || 0)}
+                    className="h-7 text-xs w-24"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -179,7 +175,7 @@ function CategoryBlock({ category, assets, defaultCurrency, displayCurrency, onA
 
           <div className="flex gap-2 pt-2">
             <Input
-              placeholder="Ticker"
+              placeholder="Ticker (ex: PETR4, AAPL)"
               value={newTicker}
               onChange={e => setNewTicker(e.target.value)}
               className="h-8 text-xs flex-1"
@@ -190,14 +186,6 @@ function CategoryBlock({ category, assets, defaultCurrency, displayCurrency, onA
               placeholder="Qtd"
               value={newQty}
               onChange={e => setNewQty(e.target.value)}
-              className="h-8 text-xs w-20"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            />
-            <Input
-              type="number"
-              placeholder="Preço"
-              value={newPrice}
-              onChange={e => setNewPrice(e.target.value)}
               className="h-8 text-xs w-24"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
