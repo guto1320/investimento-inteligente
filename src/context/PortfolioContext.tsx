@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Asset, AssetCategory, Currency, MacroAllocation, MacroCategory, MACRO_CATEGORIES } from '@/types/portfolio';
+import { Asset, AssetCategory, Currency, MacroAllocation, MacroCategory, MACRO_CATEGORIES, CATEGORY_LABELS } from '@/types/portfolio';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,6 +14,7 @@ interface PortfolioState {
   setMacroAllocation: (a: MacroAllocation) => void;
   categoryTargets: CategoryTarget;
   setCategoryTarget: (cat: AssetCategory, pct: number) => void;
+  setCategoryTargets: (targets: CategoryTarget) => void;
   assets: Asset[];
   addAsset: (asset: Omit<Asset, 'id'>) => void;
   removeAsset: (id: string) => void;
@@ -24,18 +25,32 @@ interface PortfolioState {
   getValueInCurrency: (value: number, from: Currency) => number;
   getTotalValue: () => number;
   getCategoryValue: (cat: AssetCategory) => number;
-  getNextInvestment: (amount: number) => { ticker: string; category: AssetCategory; amount: number; reason: string }[];
+  getNextInvestment: (amount: number) => InvestmentSuggestion[];
   refreshPrices: () => Promise<void>;
   syncTargetsToActual: () => void;
+  getTotalTargets: () => number;
+  getMacroFromTargets: () => { brasil: number; exterior: number };
   isLoadingPrices: boolean;
   isLoading: boolean;
 }
 
+export interface InvestmentSuggestion {
+  ticker: string;
+  category: AssetCategory;
+  amount: number;
+  reason: string;
+  detail?: string;
+  currentPct: number;
+  targetPct: number;
+  gap: number;
+}
+
 const PortfolioContext = createContext<PortfolioState | null>(null);
 
+// Now targets are % of TOTAL portfolio, summing to 100
 const DEFAULT_TARGETS: CategoryTarget = {
-  br_renda_fixa: 25, br_acoes: 30, br_etfs: 20, br_fiis: 25,
-  ext_renda_fixa: 20, ext_stocks: 35, ext_reits: 20, ext_etfs: 25,
+  br_renda_fixa: 15, br_acoes: 18, br_etfs: 12, br_fiis: 15,
+  ext_renda_fixa: 8, ext_stocks: 14, ext_reits: 8, ext_etfs: 10,
 };
 
 export function PortfolioProvider({ children }: { children: ReactNode }) {
@@ -72,7 +87,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     const loadData = async () => {
-      // Load portfolio settings
       const { data: portfolio } = await supabase
         .from('portfolios')
         .select('*')
@@ -84,7 +98,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         setMacroAllocationState({ brasil: Number(portfolio.macro_brasil), exterior: Number(portfolio.macro_exterior) });
         if (portfolio.category_targets) setCategoryTargetsState(portfolio.category_targets as CategoryTarget);
       } else {
-        // Create default portfolio
         await supabase.from('portfolios').insert({
           user_id: userId,
           currency: 'BRL',
@@ -94,7 +107,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      // Load assets
       const { data: dbAssets } = await supabase
         .from('portfolio_assets')
         .select('*')
@@ -118,7 +130,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     loadData();
   }, [userId]);
 
-  // Save portfolio settings to DB (debounced)
   const savePortfolioSettings = useCallback(async (cur: Currency, macro: MacroAllocation, targets: CategoryTarget) => {
     if (!userId) return;
     await supabase.from('portfolios').update({
@@ -130,10 +141,21 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }).eq('user_id', userId);
   }, [userId]);
 
+  const getMacroFromTargets = useCallback((): { brasil: number; exterior: number } => {
+    const brasil = MACRO_CATEGORIES.brasil.reduce((s, c) => s + (categoryTargets[c] || 0), 0);
+    const exterior = MACRO_CATEGORIES.exterior.reduce((s, c) => s + (categoryTargets[c] || 0), 0);
+    return { brasil, exterior };
+  }, [categoryTargets]);
+
+  const getTotalTargets = useCallback(() => {
+    return Object.values(categoryTargets).reduce((s, v) => s + v, 0);
+  }, [categoryTargets]);
+
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
-    savePortfolioSettings(c, macroAllocation, categoryTargets);
-  }, [macroAllocation, categoryTargets, savePortfolioSettings]);
+    const macro = getMacroFromTargets();
+    savePortfolioSettings(c, { brasil: macro.brasil, exterior: macro.exterior }, categoryTargets);
+  }, [categoryTargets, savePortfolioSettings, getMacroFromTargets]);
 
   const setMacroAllocation = useCallback((a: MacroAllocation) => {
     setMacroAllocationState(a);
@@ -143,10 +165,25 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const setCategoryTarget = useCallback((cat: AssetCategory, pct: number) => {
     setCategoryTargetsState(prev => {
       const next = { ...prev, [cat]: pct };
-      savePortfolioSettings(currency, macroAllocation, next);
+      const macro = {
+        brasil: MACRO_CATEGORIES.brasil.reduce((s, c) => s + (next[c] || 0), 0),
+        exterior: MACRO_CATEGORIES.exterior.reduce((s, c) => s + (next[c] || 0), 0),
+      };
+      setMacroAllocationState(macro);
+      savePortfolioSettings(currency, macro, next);
       return next;
     });
-  }, [currency, macroAllocation, savePortfolioSettings]);
+  }, [currency, savePortfolioSettings]);
+
+  const setCategoryTargets = useCallback((targets: CategoryTarget) => {
+    setCategoryTargetsState(targets);
+    const macro = {
+      brasil: MACRO_CATEGORIES.brasil.reduce((s, c) => s + (targets[c] || 0), 0),
+      exterior: MACRO_CATEGORIES.exterior.reduce((s, c) => s + (targets[c] || 0), 0),
+    };
+    setMacroAllocationState(macro);
+    savePortfolioSettings(currency, macro, targets);
+  }, [currency, savePortfolioSettings]);
 
   const getValueInCurrency = useCallback((value: number, from: Currency): number => {
     if (from === currency) return value;
@@ -189,7 +226,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     const newAsset = { ...asset, id };
     setAssets(prev => [...prev, newAsset]);
 
-    // Insert into DB
     await supabase.from('portfolio_assets').insert({
       id,
       user_id: userId,
@@ -201,7 +237,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       category: asset.category,
     });
 
-    // Auto-fetch price
     setIsLoadingPrices(true);
     const results = await fetchTickerPrices([asset.ticker]);
     if (results && results[asset.ticker]) {
@@ -223,134 +258,141 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   const updateAsset = useCallback(async (id: string, updates: Partial<Asset>) => {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
-    const dbUpdates: {
-      updated_at: string;
-      quantity?: number;
-      current_price?: number;
-      price_currency?: string;
-      target_weight?: number;
-      category?: string;
-    } = { updated_at: new Date().toISOString() };
-    if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
-    if (updates.currentPrice !== undefined) dbUpdates.current_price = updates.currentPrice;
+    const dbUpdates: { updated_at: string; quantity?: number; current_price?: number; price_currency?: string; target_weight?: number; category?: string } = { updated_at: new Date().toISOString() };
+    if (updates.quantity !== undefined) dbUpdates.quantity = Number(updates.quantity);
+    if (updates.currentPrice !== undefined) dbUpdates.current_price = Number(updates.currentPrice);
     if (updates.priceCurrency !== undefined) dbUpdates.price_currency = updates.priceCurrency;
-    if (updates.targetWeight !== undefined) dbUpdates.target_weight = updates.targetWeight;
+    if (updates.targetWeight !== undefined) dbUpdates.target_weight = Number(updates.targetWeight);
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     await supabase.from('portfolio_assets').update(dbUpdates).eq('id', id);
   }, []);
 
-  const updateAssetWeight = useCallback(async (id: string, weight: number) => {
-    setAssets(prev => prev.map(a => a.id === id ? { ...a, targetWeight: weight } : a));
-    await supabase.from('portfolio_assets').update({ target_weight: weight, updated_at: new Date().toISOString() }).eq('id', id);
-  }, []);
+  const updateAssetWeight = useCallback((id: string, weight: number) => {
+    updateAsset(id, { targetWeight: weight });
+  }, [updateAsset]);
 
   const distributeEqually = useCallback((category: AssetCategory) => {
-    setAssets(prev => {
-      const catAssets = prev.filter(a => a.category === category);
-      const weight = catAssets.length > 0 ? 100 / catAssets.length : 0;
-      const rounded = Math.round(weight * 100) / 100;
-      // Update DB for each
-      catAssets.forEach(a => {
-        supabase.from('portfolio_assets').update({ target_weight: rounded, updated_at: new Date().toISOString() }).eq('id', a.id).then(() => {});
-      });
-      return prev.map(a => a.category === category ? { ...a, targetWeight: rounded } : a);
-    });
-  }, []);
+    const catAssets = assets.filter(a => a.category === category);
+    if (catAssets.length === 0) return;
+    const weight = Math.round((100 / catAssets.length) * 10) / 10;
+    catAssets.forEach(a => updateAssetWeight(a.id, weight));
+  }, [assets, updateAssetWeight]);
 
-  const getNextInvestment = useCallback((amount: number) => {
-    const total = getTotalValue() + amount;
-    if (total === 0) return [];
+  // ---- IMPROVED INVESTMENT SUGGESTION ----
+  const getNextInvestment = useCallback((amount: number): InvestmentSuggestion[] => {
+    const currentTotal = getTotalValue();
+    const futureTotal = currentTotal + amount;
+    if (futureTotal === 0) return [];
 
-    const suggestions: { ticker: string; category: AssetCategory; amount: number; reason: string }[] = [];
+    const totalTargets = Object.values(categoryTargets).reduce((s, v) => s + v, 0);
+    if (totalTargets === 0) return [];
 
-    const brasilValue = MACRO_CATEGORIES.brasil.reduce((s, c) => s + getCategoryValue(c), 0);
-    const exteriorValue = MACRO_CATEGORIES.exterior.reduce((s, c) => s + getCategoryValue(c), 0);
-    const currentTotal = brasilValue + exteriorValue;
+    // Normalize targets to 100% if they don't sum exactly
+    const normFactor = 100 / totalTargets;
 
-    const brasilCurrent = currentTotal > 0 ? (brasilValue / currentTotal) * 100 : 0;
-    const exteriorCurrent = currentTotal > 0 ? (exteriorValue / currentTotal) * 100 : 0;
-
-    const brasilGap = macroAllocation.brasil - brasilCurrent;
-    const exteriorGap = macroAllocation.exterior - exteriorCurrent;
-
-    const macroToInvest: MacroCategory = brasilGap >= exteriorGap ? 'brasil' : 'exterior';
-    const macroLabel = macroToInvest === 'brasil' ? 'Brasil' : 'Exterior';
-
-    const cats = MACRO_CATEGORIES[macroToInvest];
-    const macroValue = macroToInvest === 'brasil' ? brasilValue : exteriorValue;
-
-    const catGaps = cats.map(cat => {
+    // Calculate gap for each category (target vs actual as % of total)
+    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior];
+    const catAnalysis = allCats.map(cat => {
       const catValue = getCategoryValue(cat);
-      const currentPct = macroValue > 0 ? (catValue / macroValue) * 100 : 0;
-      const target = categoryTargets[cat] || 0;
-      return { cat, gap: target - currentPct, currentPct, target };
-    }).sort((a, b) => b.gap - a.gap);
+      const actualPct = currentTotal > 0 ? (catValue / currentTotal) * 100 : 0;
+      const targetPct = (categoryTargets[cat] || 0) * normFactor;
+      const gap = targetPct - actualPct;
+      // How much money is needed to reach target at futureTotal
+      const targetValue = (targetPct / 100) * futureTotal;
+      const deficit = targetValue - catValue;
+      return { cat, catValue, actualPct, targetPct, gap, deficit };
+    }).filter(c => c.deficit > 0)
+      .sort((a, b) => b.gap - a.gap);
 
-    const targetCat = catGaps[0];
-    if (!targetCat) return [];
+    if (catAnalysis.length === 0) return [];
 
-    const catAssets = assets.filter(a => a.category === targetCat.cat);
-    if (catAssets.length === 0) {
-      suggestions.push({
-        ticker: '-',
-        category: targetCat.cat,
-        amount,
-        reason: `${macroLabel} está ${Math.abs(macroToInvest === 'brasil' ? brasilGap : exteriorGap).toFixed(1)}% abaixo da meta. Adicione ativos nesta categoria.`,
-      });
-      return suggestions;
-    }
+    // Distribute the amount proportionally to each deficit
+    const totalDeficit = catAnalysis.reduce((s, c) => s + c.deficit, 0);
+    const suggestions: InvestmentSuggestion[] = [];
 
-    const catTotalValue = getCategoryValue(targetCat.cat);
-    const assetGaps = catAssets.map(a => {
-      const assetValue = getValueInCurrency(a.currentPrice * a.quantity, a.priceCurrency);
-      const currentPct = catTotalValue > 0 ? (assetValue / catTotalValue) * 100 : 0;
-      return { asset: a, gap: a.targetWeight - currentPct, currentPct };
-    }).sort((a, b) => b.gap - a.gap);
+    for (const ca of catAnalysis) {
+      const proportion = ca.deficit / totalDeficit;
+      const catAmount = Math.round(amount * proportion * 100) / 100;
+      if (catAmount < 0.01) continue;
 
-    let remaining = amount;
-    for (const ag of assetGaps) {
-      if (remaining <= 0) break;
-      if (ag.gap <= 0 && assetGaps[0].gap > 0) continue;
-      const allocation = Math.min(remaining, amount * (ag.asset.targetWeight / 100));
-      if (allocation > 0) {
+      // Find the best asset within the category
+      const catAssets = assets.filter(a => a.category === ca.cat);
+      if (catAssets.length === 0) {
         suggestions.push({
-          ticker: ag.asset.ticker,
-          category: ag.asset.category,
-          amount: allocation,
-          reason: `Meta: ${ag.asset.targetWeight.toFixed(1)}% | Atual: ${ag.currentPct.toFixed(1)}%`,
+          ticker: '—',
+          category: ca.cat,
+          amount: catAmount,
+          reason: `${CATEGORY_LABELS[ca.cat]} está ${ca.gap.toFixed(1)}pp abaixo da meta`,
+          detail: `Atual: ${ca.actualPct.toFixed(1)}% → Meta: ${ca.targetPct.toFixed(1)}%. Adicione ativos nesta categoria.`,
+          currentPct: ca.actualPct,
+          targetPct: ca.targetPct,
+          gap: ca.gap,
         });
-        remaining -= allocation;
+        continue;
+      }
+
+      // Distribute within category by asset weight gaps
+      const catTotalValue = ca.catValue;
+      const assetAnalysis = catAssets.map(a => {
+        const assetValue = getValueInCurrency(a.currentPrice * a.quantity, a.priceCurrency);
+        const currentPctInCat = catTotalValue > 0 ? (assetValue / catTotalValue) * 100 : 0;
+        const assetGap = a.targetWeight - currentPctInCat;
+        return { asset: a, assetValue, currentPctInCat, assetGap };
+      }).sort((a, b) => b.assetGap - a.assetGap);
+
+      // Give more to assets with bigger gaps
+      const totalAssetGap = assetAnalysis.reduce((s, a) => s + Math.max(0, a.assetGap), 0);
+
+      let remaining = catAmount;
+      for (const aa of assetAnalysis) {
+        if (remaining <= 0.01) break;
+        let assetAmount: number;
+        if (totalAssetGap > 0 && aa.assetGap > 0) {
+          assetAmount = Math.min(remaining, catAmount * (aa.assetGap / totalAssetGap));
+        } else {
+          assetAmount = remaining / assetAnalysis.length;
+        }
+        assetAmount = Math.round(assetAmount * 100) / 100;
+        if (assetAmount < 0.01) continue;
+
+        suggestions.push({
+          ticker: aa.asset.ticker,
+          category: ca.cat,
+          amount: assetAmount,
+          reason: `${CATEGORY_LABELS[ca.cat]}: ${ca.actualPct.toFixed(1)}% → meta ${ca.targetPct.toFixed(1)}%`,
+          detail: `Peso no ativo: ${aa.currentPctInCat.toFixed(1)}% (meta ${aa.asset.targetWeight.toFixed(1)}%)`,
+          currentPct: ca.actualPct,
+          targetPct: ca.targetPct,
+          gap: ca.gap,
+        });
+        remaining -= assetAmount;
       }
     }
 
-    return suggestions;
-  }, [getTotalValue, getCategoryValue, macroAllocation, categoryTargets, assets, getValueInCurrency]);
+    return suggestions.sort((a, b) => b.amount - a.amount);
+  }, [getTotalValue, getCategoryValue, categoryTargets, assets, getValueInCurrency]);
 
   const syncTargetsToActual = useCallback(() => {
     const total = getTotalValue();
     if (total === 0) return;
 
-    const brasilValue = MACRO_CATEGORIES.brasil.reduce((s, c) => s + getCategoryValue(c), 0);
-    const exteriorValue = MACRO_CATEGORIES.exterior.reduce((s, c) => s + getCategoryValue(c), 0);
-    const newMacro = {
-      brasil: Math.round((brasilValue / total) * 100),
-      exterior: Math.round((exteriorValue / total) * 100),
-    };
-    // Ensure they sum to 100
-    newMacro.exterior = 100 - newMacro.brasil;
-    setMacroAllocation(newMacro);
-
     const newTargets: CategoryTarget = {};
-    for (const macro of ['brasil', 'exterior'] as const) {
-      const macroValue = macro === 'brasil' ? brasilValue : exteriorValue;
-      for (const cat of MACRO_CATEGORIES[macro]) {
-        const catValue = getCategoryValue(cat);
-        newTargets[cat] = macroValue > 0 ? Math.round((catValue / macroValue) * 100) : 0;
-      }
+    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior];
+    let sum = 0;
+    for (const cat of allCats) {
+      const catValue = getCategoryValue(cat);
+      const pct = Math.round((catValue / total) * 100);
+      newTargets[cat] = pct;
+      sum += pct;
     }
-    setCategoryTargetsState(newTargets);
-    savePortfolioSettings(currency, newMacro, newTargets);
-  }, [getTotalValue, getCategoryValue, setMacroAllocation, currency, savePortfolioSettings]);
+    // Adjust rounding to ensure exactly 100
+    if (sum !== 100 && allCats.length > 0) {
+      const biggest = allCats.reduce((best, cat) => newTargets[cat] > newTargets[best] ? cat : best, allCats[0]);
+      newTargets[biggest] += 100 - sum;
+    }
+
+    setCategoryTargets(newTargets);
+  }, [getTotalValue, getCategoryValue]);
 
   const refreshPrices = useCallback(async () => {
     setIsLoadingPrices(true);
@@ -375,10 +417,12 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     <PortfolioContext.Provider value={{
       currency, setCurrency,
       macroAllocation, setMacroAllocation,
-      categoryTargets, setCategoryTarget,
+      categoryTargets, setCategoryTarget, setCategoryTargets,
       assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually,
       exchangeRates, getValueInCurrency, getTotalValue, getCategoryValue,
-      getNextInvestment, refreshPrices, syncTargetsToActual, isLoadingPrices, isLoading,
+      getNextInvestment, refreshPrices, syncTargetsToActual,
+      getTotalTargets, getMacroFromTargets,
+      isLoadingPrices, isLoading,
     }}>
       {children}
     </PortfolioContext.Provider>

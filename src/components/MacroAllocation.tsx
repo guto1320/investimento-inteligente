@@ -2,17 +2,21 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { Slider } from '@/components/ui/slider';
 import { MACRO_CATEGORIES, CATEGORY_LABELS, AssetCategory } from '@/types/portfolio';
 import { formatCurrency } from './CurrencySelector';
-import { Globe, MapPin, Target } from 'lucide-react';
+import { Globe, MapPin, Target, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
-  const { macroAllocation, setMacroAllocation, categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual } = usePortfolio();
+  const { categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual, getTotalTargets, getMacroFromTargets } = usePortfolio();
   const total = getTotalValue();
+  const totalTargets = getTotalTargets();
+  const macroTargets = getMacroFromTargets();
+  const isValid = totalTargets === 100;
+  const diff = 100 - totalTargets;
 
   return (
-    <div className="glass-card p-6 space-y-6">
+    <div className="glass-card p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Alocação Macro</h2>
+        <h2 className="text-lg font-semibold text-foreground">Alocação Objetivo</h2>
         <Button
           variant="outline"
           size="sm"
@@ -26,33 +30,47 @@ export function MacroAllocation() {
         </Button>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Brasil</span>
+      {/* Total indicator */}
+      <div className={`flex items-center gap-2 rounded-lg p-3 text-sm font-medium ${
+        isValid
+          ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+          : 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400'
+      }`}>
+        {isValid ? (
+          <>
+            <CheckCircle className="w-4 h-4" />
+            <span>100% alocado — objetivo completo</span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle className="w-4 h-4" />
+            <span>
+              Total: {totalTargets}% — {diff > 0 ? `faltam ${diff}%` : `excede em ${Math.abs(diff)}%`}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* Macro summary (derived from categories) */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-secondary/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Brasil (objetivo)</span>
           </div>
-          <span className="text-sm font-bold text-primary">{macroAllocation.brasil}%</span>
+          <p className="text-lg font-bold text-primary">{macroTargets.brasil}%</p>
         </div>
-        <Slider
-          value={[macroAllocation.brasil]}
-          onValueChange={([v]) => setMacroAllocation({ brasil: v, exterior: 100 - v })}
-          max={100}
-          step={1}
-          className="w-full"
-        />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-chart-2" />
-            <span className="text-sm font-medium">Exterior</span>
+        <div className="bg-secondary/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Globe className="w-3.5 h-3.5 text-chart-2" />
+            <span className="text-xs font-medium text-muted-foreground">Exterior (objetivo)</span>
           </div>
-          <span className="text-sm font-bold text-chart-2">{macroAllocation.exterior}%</span>
+          <p className="text-lg font-bold text-chart-2">{macroTargets.exterior}%</p>
         </div>
       </div>
 
-      <div className="border-t border-border pt-4 space-y-4">
-        <h3 className="text-sm font-medium text-muted-foreground">Distribuição por Categoria</h3>
-
+      {/* Category sliders — % of total */}
+      <div className="space-y-4">
         {(['brasil', 'exterior'] as const).map(macro => (
           <div key={macro} className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -60,14 +78,14 @@ export function MacroAllocation() {
             </p>
             {MACRO_CATEGORIES[macro].map(cat => {
               const catValue = getCategoryValue(cat);
-              const macroValue = MACRO_CATEGORIES[macro].reduce((s, c) => s + getCategoryValue(c), 0);
-              const actualPct = macroValue > 0 ? (catValue / macroValue) * 100 : 0;
+              const actualPct = total > 0 ? (catValue / total) * 100 : 0;
+              const target = categoryTargets[cat] || 0;
 
               return (
                 <CategorySlider
                   key={cat}
                   category={cat}
-                  target={categoryTargets[cat] || 0}
+                  target={target}
                   actual={actualPct}
                   value={catValue}
                   currency={currency}
@@ -100,10 +118,12 @@ function CategorySlider({ category, target, actual, value, currency, onChange }:
           <span className="text-muted-foreground">
             {formatCurrency(value, currency as any)}
           </span>
-          <span className={`font-medium ${diff > 2 ? 'text-warning' : diff < -2 ? 'text-destructive' : 'text-success'}`}>
+          <span className={`font-medium ${Math.abs(diff) > 2 ? (diff > 0 ? 'text-chart-2' : 'text-destructive') : 'text-green-600 dark:text-green-400'}`}>
             {actual.toFixed(1)}%
           </span>
-          <span className="text-muted-foreground">meta: {target}%</span>
+          <span className="font-semibold text-foreground bg-secondary px-1.5 py-0.5 rounded">
+            {target}%
+          </span>
         </div>
       </div>
       <Slider
