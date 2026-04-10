@@ -6,24 +6,28 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Scale, RefreshCw, Loader2 } from 'lucide-react';
+import { ImportAssets } from './ImportAssets';
 
 export function AssetManager() {
   const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices } = usePortfolio();
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">Meus Ativos</h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refreshPrices}
-          disabled={isLoadingPrices}
-          className="gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoadingPrices ? 'animate-spin' : ''}`} />
-          Atualizar Cotações
-        </Button>
+        <div className="flex items-center gap-2">
+          <ImportAssets />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshPrices}
+            disabled={isLoadingPrices}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoadingPrices ? 'animate-spin' : ''}`} />
+            Atualizar Cotações
+          </Button>
+        </div>
       </div>
 
       {(['brasil', 'exterior'] as const).map(macro => (
