@@ -135,15 +135,15 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setAssets(prev => [...prev, newAsset]);
 
     // Auto-fetch price
-    const isBrazilian = asset.category.startsWith('br_');
     setIsLoadingPrices(true);
-    fetchTickerPrice(asset.ticker, isBrazilian).then(result => {
-      if (result) {
-        setAssets(prev => prev.map(a => a.id === id ? { ...a, currentPrice: result.price, priceCurrency: result.currency } : a));
+    fetchTickerPrices([asset.ticker]).then(results => {
+      if (results && results[asset.ticker]) {
+        const r = results[asset.ticker];
+        setAssets(prev => prev.map(a => a.id === id ? { ...a, currentPrice: r.price, priceCurrency: r.currency as Currency } : a));
       }
       setIsLoadingPrices(false);
     });
-  }, [fetchTickerPrice]);
+  }, [fetchTickerPrices]);
 
   const removeAsset = useCallback((id: string) => {
     setAssets(prev => prev.filter(a => a.id !== id));
