@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, ArrowRight, Zap, AlertTriangle, Info } from 'lucide-react';
 
 export function NextInvestment() {
-  const { getNextInvestment, currency, getTotalValue, getTotalTargets } = usePortfolio();
+  const { getNextInvestment, currency, getTotalTargets } = usePortfolio();
   const [amount, setAmount] = useState('');
   const [suggestions, setSuggestions] = useState<InvestmentSuggestion[]>([]);
 
@@ -18,7 +18,6 @@ export function NextInvestment() {
     }
   };
 
-  const total = getTotalValue();
   const totalTargets = getTotalTargets();
   const isValid = totalTargets === 100;
 
@@ -37,11 +36,6 @@ export function NextInvestment() {
       <div className="flex items-center gap-2">
         <Zap className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-semibold">Próximo Aporte</h2>
-      </div>
-
-      <div className="bg-secondary/50 rounded-lg p-4">
-        <p className="text-xs text-muted-foreground mb-1">Patrimônio total</p>
-        <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency)}</p>
       </div>
 
       {!isValid && (

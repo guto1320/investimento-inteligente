@@ -34,6 +34,12 @@ export function PortfolioOverview() {
     <div className="glass-card p-6 space-y-4">
       <h2 className="text-lg font-semibold">Visão Geral</h2>
 
+      {/* Patrimônio total */}
+      <div className="bg-secondary/50 rounded-lg p-4">
+        <p className="text-xs text-muted-foreground mb-1">Patrimônio total</p>
+        <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency)}</p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🇧🇷 Brasil</p>
