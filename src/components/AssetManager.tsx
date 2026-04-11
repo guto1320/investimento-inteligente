@@ -81,14 +81,20 @@ export function AssetManager() {
                 category={cat}
                 assets={assets.filter(a => a.category === cat)}
                 displayCurrency={currency}
-                onAdd={(ticker, qty) => addAsset({
-                  ticker: ticker.toUpperCase(),
-                  quantity: qty,
-                  currentPrice: 0,
-                  priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
-                  targetWeight: 0,
-                  category: cat,
-                })}
+                onAdd={(ticker, qty) => {
+                  let finalTicker = ticker.toUpperCase();
+                  if (cat === 'cripto_ativos' && !finalTicker.includes('-')) {
+                    finalTicker = `${finalTicker}-USD`;
+                  }
+                  addAsset({
+                    ticker: finalTicker,
+                    quantity: qty,
+                    currentPrice: 0,
+                    priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
+                    targetWeight: 0,
+                    category: cat,
+                  });
+                }}
                 onRemove={removeAsset}
                 onUpdateQuantity={(id, qty) => updateAsset(id, { quantity: qty })}
                 onUpdateWeight={updateAssetWeight}
