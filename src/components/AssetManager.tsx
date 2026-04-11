@@ -407,42 +407,42 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
            Registrar Compra/Venda
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-[90vw]">
         <DialogHeader>
           <DialogTitle>Diário de Transações ({asset.ticker})</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
-           <div className="flex items-end gap-2">
-             <div className="space-y-1">
+           <div className="flex flex-wrap items-end gap-3 bg-secondary/20 p-3 rounded-lg border border-border/50">
+             <div className="space-y-1 min-w-[100px] flex-1">
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Tipo</span>
-               <select className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={type} onChange={e => setType(e.target.value)}>
+               <select className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={type} onChange={e => setType(e.target.value)}>
                  <option value="buy">Compra</option>
                  <option value="sell">Venda</option>
                </select>
              </div>
-             <div className="space-y-1 flex-1">
+             <div className="space-y-1 min-w-[120px] flex-1">
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Data</span>
-               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9" />
+               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 bg-background/50" />
              </div>
-             <div className="space-y-1 w-20">
+             <div className="space-y-1 min-w-[80px] flex-1">
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
-               <Input type="number" step="any" value={qty} onChange={e => setQty(e.target.value)} className="h-9" />
+               <Input type="number" step="any" value={qty} onChange={e => setQty(e.target.value)} className="h-9 bg-background/50" />
              </div>
-             <div className="space-y-1 w-24">
+             <div className="space-y-1 min-w-[90px] flex-1">
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
-               <Input type="number" step="any" value={price} onChange={e => setPrice(e.target.value)} className="h-9" />
+               <Input type="number" step="any" value={price} onChange={e => setPrice(e.target.value)} className="h-9 bg-background/50" />
              </div>
              {asset.priceCurrency === 'USD' && (
-               <div className="space-y-1 w-20">
+               <div className="space-y-1 min-w-[80px] flex-1">
                  <span className="text-[10px] uppercase font-semibold text-muted-foreground">Câmbio</span>
-                 <Input type="number" step="any" placeholder="Ex: 5" value={exchange} onChange={e => setExchange(e.target.value)} className="h-9" />
+                 <Input type="number" step="any" placeholder="Ex: 5.10" value={exchange} onChange={e => setExchange(e.target.value)} className="h-9 bg-background/50" />
                </div>
              )}
-             <div className="space-y-1 w-20">
+             <div className="space-y-1 min-w-[80px] flex-1">
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Custos</span>
-               <Input type="number" step="any" value={costs} onChange={e => setCosts(e.target.value)} className="h-9" />
+               <Input type="number" step="any" value={costs} onChange={e => setCosts(e.target.value)} className="h-9 bg-background/50" />
              </div>
-             <Button onClick={handleAdd} className="h-9 px-3"><Plus className="w-4 h-4" /></Button>
+             <Button onClick={handleAdd} className="h-9 px-4 w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" /> Lançar</Button>
            </div>
            
            <div className="space-y-2 max-h-[300px] overflow-y-auto">
