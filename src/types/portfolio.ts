@@ -23,6 +23,15 @@ export interface Asset {
   category: AssetCategory;
 }
 
+export interface Transaction {
+  id: string;
+  assetId: string;
+  type: 'buy' | 'sell';
+  date: string;
+  quantity: number;
+  price: number;
+}
+
 export interface CategoryConfig {
   id: AssetCategory;
   label: string;

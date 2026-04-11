@@ -5,7 +5,8 @@ import { formatCurrency } from './CurrencySelector';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Scale, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Scale, RefreshCw, Loader2, History } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ImportAssets } from './ImportAssets';
 
 const FIXED_INCOME_CATEGORIES: AssetCategory[] = ['br_renda_fixa', 'ext_renda_fixa'];
@@ -210,6 +211,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
   isLoadingPrices: boolean;
   valuesHidden: boolean;
 }) {
+  const { transactions, addTransaction, removeTransaction } = usePortfolio();
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -293,14 +295,14 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground shrink-0">Qtd:</span>
-                  <Input
-                    type="number"
-                    step="any"
-                    value={asset.quantity}
-                    onChange={e => onUpdateQuantity(asset.id, parseFloat(e.target.value) || 0)}
-                    className="h-7 text-xs w-24"
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-muted-foreground shrink-0">Saldo em Carteira:</span>
+                  <span className="font-mono font-bold text-sm">{asset.quantity} un</span>
+                  <TransactionModal
+                    asset={asset}
+                    transactions={transactions.filter(t => t.assetId === asset.id)}
+                    addTransaction={addTransaction}
+                    removeTransaction={removeTransaction}
                   />
                 </div>
 
@@ -346,5 +348,84 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
         </div>
       )}
     </div>
+  );
+}
+
+function TransactionModal({ asset, transactions, addTransaction, removeTransaction }: any) {
+  const [type, setType] = useState('buy');
+  const [qty, setQty] = useState('');
+  const [price, setPrice] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handleAdd = () => {
+    if (!qty || !price || !date) return;
+    addTransaction({
+      assetId: asset.id,
+      type: type as 'buy' | 'sell',
+      date: new Date(date).toISOString(),
+      quantity: parseFloat(qty),
+      price: parseFloat(price)
+    });
+    setQty('');
+    setPrice('');
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 px-2">
+          <History className="w-3.5 h-3.5" />
+           Histórico
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Diário de Transações ({asset.ticker})</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+           <div className="flex items-end gap-2">
+             <div className="space-y-1">
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Tipo</span>
+               <select className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={type} onChange={e => setType(e.target.value)}>
+                 <option value="buy">Compra</option>
+                 <option value="sell">Venda</option>
+               </select>
+             </div>
+             <div className="space-y-1 flex-1">
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Data</span>
+               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9" />
+             </div>
+             <div className="space-y-1 w-20">
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
+               <Input type="number" step="any" value={qty} onChange={e => setQty(e.target.value)} className="h-9" />
+             </div>
+             <div className="space-y-1 w-24">
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
+               <Input type="number" step="any" value={price} onChange={e => setPrice(e.target.value)} className="h-9" />
+             </div>
+             <Button onClick={handleAdd} className="h-9 px-3"><Plus className="w-4 h-4" /></Button>
+           </div>
+           
+           <div className="space-y-2 max-h-[300px] overflow-y-auto">
+             {transactions.sort((a:any,b:any)=>new Date(b.date).getTime() - new Date(a.date).getTime()).map((t:any) => (
+               <div key={t.id} className="flex items-center justify-between bg-secondary/50 rounded-lg p-3 text-sm border border-border/50">
+                 <div className="flex flex-1 items-center gap-4">
+                   <div className={`flex items-center justify-center w-6 h-6 rounded-full ${t.type === 'buy' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                     {t.type === 'buy' ? 'C' : 'V'}
+                   </div>
+                   <span className="w-24 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</span>
+                   <span className="w-20 font-medium text-right">{t.quantity} un</span>
+                   <span className="w-24 font-mono text-right">{t.price.toFixed(2)}</span>
+                 </div>
+                 <button onClick={() => removeTransaction(t.id, asset.id)} className="text-muted-foreground hover:text-destructive transiton-colors ml-4 p-1">
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
+             ))}
+             {transactions.length === 0 && <p className="text-xs text-center text-muted-foreground pt-4 pb-2">Nenhuma transação registrada. Mantenha seu histórico atualizado.</p>}
+           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -53,6 +53,47 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_transactions: {
+        Row: {
+          id: string
+          asset_id: string
+          user_id: string
+          type: string
+          date: string
+          quantity: number
+          price: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          asset_id: string
+          user_id: string
+          type: string
+          date: string
+          quantity: number
+          price: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          asset_id?: string
+          user_id?: string
+          type?: string
+          date?: string
+          quantity?: number
+          price?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_transactions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio_assets"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       portfolios: {
         Row: {
           category_targets: Json
