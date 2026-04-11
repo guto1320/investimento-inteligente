@@ -71,7 +71,6 @@ export function NextInvestment() {
             <p className="text-xs text-muted-foreground">
               Total: {formatCurrency(totalSuggested, currency, valuesHidden)}
             </p>
-            </p>
           </div>
 
           {/* Explanation */}

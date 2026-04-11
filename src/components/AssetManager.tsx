@@ -108,7 +108,6 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
         <span className="text-sm font-semibold text-primary">
           {formatCurrency(catValue, displayCurrency, valuesHidden)}
         </span>
-        </span>
       </button>
 
       {isOpen && (
