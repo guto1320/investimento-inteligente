@@ -426,6 +426,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       getNextInvestment, refreshPrices, syncTargetsToActual,
       getTotalTargets, getMacroFromTargets,
       isLoadingPrices, isLoading,
+      valuesHidden, setValuesHidden,
     }}>
       {children}
     </PortfolioContext.Provider>
