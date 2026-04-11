@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Scale, RefreshCw, Loader2, History } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ImportAssets } from './ImportAssets';
 
 const FIXED_INCOME_CATEGORIES: AssetCategory[] = ['br_renda_fixa', 'ext_renda_fixa'];
 
@@ -23,6 +24,7 @@ export function AssetManager() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">Meus Ativos</h2>
         <div className="flex items-center gap-2">
+          <ImportAssets />
           <Button
             variant="outline"
             size="sm"
