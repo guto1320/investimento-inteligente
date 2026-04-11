@@ -360,7 +360,7 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
-                      <Input type="number" step="any" placeholder="Preço (R$)" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="h-9" />
+                      <Input type="number" step="any" placeholder={isForeign ? "Preço (USD)" : "Preço (R$)"} value={newPrice} onChange={e => setNewPrice(e.target.value)} className="h-9" />
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
@@ -443,8 +443,8 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
                <Input type="number" step="any" value={qty} onChange={e => setQty(e.target.value)} className="h-9 bg-background/50" />
              </div>
              <div className="space-y-1 min-w-[90px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
-               <Input type="number" step="any" value={price} onChange={e => setPrice(e.target.value)} className="h-9 bg-background/50" />
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un. {asset.priceCurrency === 'USD' ? '(US$)' : '(R$)'}</span>
+               <Input type="number" step="any" placeholder={asset.priceCurrency === 'USD' ? "Ex: 15.00" : "Ex: 25.50"} value={price} onChange={e => setPrice(e.target.value)} className="h-9 bg-background/50" />
              </div>
              {asset.priceCurrency === 'USD' && (
                <div className="space-y-1 min-w-[80px] flex-1">
