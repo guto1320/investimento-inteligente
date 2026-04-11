@@ -398,7 +398,7 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 px-2">
           <History className="w-3.5 h-3.5" />
-           Histórico
+           Registrar Compra/Venda
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
