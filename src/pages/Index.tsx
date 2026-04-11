@@ -9,6 +9,7 @@ import { PaletteSelector } from '@/components/PaletteSelector';
 import { useAuth } from '@/context/AuthContext';
 import { LogOut, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function VisibilityToggle() {
   const { valuesHidden, setValuesHidden } = usePortfolio();
@@ -47,16 +48,32 @@ const Index = () => {
         </header>
 
         <main className="container max-w-7xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-4 space-y-6">
-              <NextInvestment />
-              <PortfolioOverview />
-              <MacroAllocation />
+          <Tabs defaultValue="visao-geral" className="space-y-8">
+            <div className="flex justify-center">
+              <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
+                <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
+                <TabsTrigger value="meus-ativos">Meus Ativos</TabsTrigger>
+                <TabsTrigger value="objetivos">Objetivos</TabsTrigger>
+              </TabsList>
             </div>
-            <div className="lg:col-span-8">
+
+            <TabsContent value="visao-geral" className="space-y-6 animate-in fade-in-50 duration-500">
+              <div className="max-w-4xl mx-auto space-y-6">
+                <NextInvestment />
+                <PortfolioOverview />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="meus-ativos" className="animate-in fade-in-50 duration-500">
               <AssetManager />
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="objetivos" className="animate-in fade-in-50 duration-500">
+              <div className="max-w-2xl mx-auto">
+                <MacroAllocation />
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </PortfolioProvider>
