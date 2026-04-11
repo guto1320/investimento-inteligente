@@ -32,6 +32,8 @@ interface PortfolioState {
   getMacroFromTargets: () => { brasil: number; exterior: number };
   isLoadingPrices: boolean;
   isLoading: boolean;
+  valuesHidden: boolean;
+  setValuesHidden: (v: boolean) => void;
 }
 
 export interface InvestmentSuggestion {
@@ -64,6 +66,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [exchangeRates, setExchangeRates] = useState({ USD_BRL: 5.2, EUR_BRL: 5.7, USD_EUR: 0.92 });
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [valuesHidden, setValuesHidden] = useState(true);
 
   // Fetch exchange rates
   useEffect(() => {
@@ -423,6 +426,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       getNextInvestment, refreshPrices, syncTargetsToActual,
       getTotalTargets, getMacroFromTargets,
       isLoadingPrices, isLoading,
+      valuesHidden, setValuesHidden,
     }}>
       {children}
     </PortfolioContext.Provider>
