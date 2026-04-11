@@ -366,16 +366,6 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
                       <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
                       <Input type="number" step="any" placeholder="Quantidade" value={newQty} onChange={e => setNewQty(e.target.value)} className="h-9" />
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Custos</span>
-                      <Input type="number" step="any" placeholder="Corretagem" value={newCosts} onChange={e => setNewCosts(e.target.value)} className="h-9" />
-                    </div>
-                    {isForeign && (
-                      <div className="space-y-1 col-span-2">
-                        <span className="text-[10px] uppercase font-semibold text-muted-foreground">Câmbio</span>
-                        <Input type="number" step="any" placeholder="Ex: 5.10" value={newExchange} onChange={e => setNewExchange(e.target.value)} className="h-9" />
-                      </div>
-                    )}
                   </div>
                   <Button onClick={handleAdd} className="w-full">Cadastrar Ativo</Button>
                 </div>
@@ -446,16 +436,6 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un. {asset.priceCurrency === 'USD' ? '(US$)' : '(R$)'}</span>
                <Input type="number" step="any" placeholder={asset.priceCurrency === 'USD' ? "Ex: 15.00" : "Ex: 25.50"} value={price} onChange={e => setPrice(e.target.value)} className="h-9 bg-background/50" />
              </div>
-             {asset.priceCurrency === 'USD' && (
-               <div className="space-y-1 min-w-[80px] flex-1">
-                 <span className="text-[10px] uppercase font-semibold text-muted-foreground">Câmbio</span>
-                 <Input type="number" step="any" placeholder="Ex: 5.10" value={exchange} onChange={e => setExchange(e.target.value)} className="h-9 bg-background/50" />
-               </div>
-             )}
-             <div className="space-y-1 min-w-[80px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Custos</span>
-               <Input type="number" step="any" value={costs} onChange={e => setCosts(e.target.value)} className="h-9 bg-background/50" />
-             </div>
              <Button onClick={handleAdd} className="h-9 px-4 w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" /> Lançar</Button>
            </div>
            
@@ -470,11 +450,6 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
                    <span className="w-20 font-medium text-right">{t.quantity} un</span>
                    <span className="w-24 font-mono text-right flex flex-col items-end">
                      {t.price.toFixed(2)}
-                     {(t.operationalCosts > 0 || t.exchangeRate > 0) && (
-                       <span className="text-[9px] text-muted-foreground leading-tight mt-1 truncate">
-                         {t.exchangeRate ? `Câmbio: ${t.exchangeRate} ` : ''}{t.operationalCosts ? `Custos: ${t.operationalCosts}` : ''}
-                       </span>
-                     )}
                    </span>
                  </div>
                  <button onClick={() => removeTransaction(t.id, asset.id)} className="text-muted-foreground hover:text-destructive transiton-colors ml-4 p-1">
