@@ -6,7 +6,7 @@ import { Globe, MapPin, Target, AlertTriangle, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
-  const { categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual, getTotalTargets, getMacroFromTargets } = usePortfolio();
+  const { categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual, getTotalTargets, getMacroFromTargets, valuesHidden } = usePortfolio();
   const total = getTotalValue();
   const totalTargets = getTotalTargets();
   const macroTargets = getMacroFromTargets();
@@ -90,6 +90,7 @@ export function MacroAllocation() {
                   value={catValue}
                   currency={currency}
                   onChange={(v) => setCategoryTarget(cat, v)}
+                  hidden={valuesHidden}
                 />
               );
             })}
@@ -100,13 +101,14 @@ export function MacroAllocation() {
   );
 }
 
-function CategorySlider({ category, target, actual, value, currency, onChange }: {
+function CategorySlider({ category, target, actual, value, currency, onChange, hidden }: {
   category: AssetCategory;
   target: number;
   actual: number;
   value: number;
   currency: string;
   onChange: (v: number) => void;
+  hidden?: boolean;
 }) {
   const diff = actual - target;
 
@@ -116,7 +118,7 @@ function CategorySlider({ category, target, actual, value, currency, onChange }:
         <span className="text-sm">{CATEGORY_LABELS[category]}</span>
         <div className="flex items-center gap-3 text-xs">
           <span className="text-muted-foreground">
-            {formatCurrency(value, currency as any)}
+            {formatCurrency(value, currency as any, hidden)}
           </span>
           <span className={`font-medium ${Math.abs(diff) > 2 ? (diff > 0 ? 'text-chart-2' : 'text-destructive') : 'text-green-600 dark:text-green-400'}`}>
             {actual.toFixed(1)}%

@@ -4,7 +4,7 @@ import { formatCurrency } from './CurrencySelector';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export function PortfolioOverview() {
-  const { getCategoryValue, getTotalValue, currency, categoryTargets, getMacroFromTargets } = usePortfolio();
+  const { getCategoryValue, getTotalValue, currency, categoryTargets, getMacroFromTargets, valuesHidden } = usePortfolio();
   const macroTargets = getMacroFromTargets();
   const total = getTotalValue();
 
@@ -37,13 +37,13 @@ export function PortfolioOverview() {
       {/* Patrimônio total */}
       <div className="bg-secondary/50 rounded-lg p-4">
         <p className="text-xs text-muted-foreground mb-1">Patrimônio total</p>
-        <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency)}</p>
+        <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency, valuesHidden)}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🇧🇷 Brasil</p>
-          <p className="text-lg font-bold">{formatCurrency(brasilValue, currency)}</p>
+          <p className="text-lg font-bold">{formatCurrency(brasilValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">
              <span className={`text-xs font-medium ${Math.abs(brasilPct - macroTargets.brasil) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
               {brasilPct.toFixed(1)}%
@@ -53,7 +53,7 @@ export function PortfolioOverview() {
         </div>
         <div className="bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🌎 Exterior</p>
-          <p className="text-lg font-bold">{formatCurrency(exteriorValue, currency)}</p>
+          <p className="text-lg font-bold">{formatCurrency(exteriorValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className={`text-xs font-medium ${Math.abs(exteriorPct - macroTargets.exterior) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
               {exteriorPct.toFixed(1)}%
@@ -80,7 +80,7 @@ export function PortfolioOverview() {
                     return (
                       <div className="bg-popover border border-border rounded-lg p-2 text-xs shadow-lg">
                         <p className="font-medium">{d.name}</p>
-                        <p className="text-muted-foreground">{formatCurrency(d.value, currency)}</p>
+                        <p className="text-muted-foreground">{formatCurrency(d.value, currency, valuesHidden)}</p>
                       </div>
                     );
                   }}
