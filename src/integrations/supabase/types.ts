@@ -61,6 +61,7 @@ export type Database = {
           id: string
           macro_brasil: number
           macro_exterior: number
+          macro_cripto: number
           updated_at: string
           user_id: string
         }
@@ -71,6 +72,7 @@ export type Database = {
           id?: string
           macro_brasil?: number
           macro_exterior?: number
+          macro_cripto?: number
           updated_at?: string
           user_id: string
         }
@@ -81,6 +83,7 @@ export type Database = {
           id?: string
           macro_brasil?: number
           macro_exterior?: number
+          macro_cripto?: number
           updated_at?: string
           user_id?: string
         }

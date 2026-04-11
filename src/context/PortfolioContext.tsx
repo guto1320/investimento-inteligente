@@ -53,6 +53,7 @@ const PortfolioContext = createContext<PortfolioState | null>(null);
 const DEFAULT_TARGETS: CategoryTarget = {
   br_renda_fixa: 15, br_acoes: 18, br_etfs: 12, br_fiis: 15,
   ext_renda_fixa: 8, ext_stocks: 14, ext_reits: 8, ext_etfs: 10,
+  cripto_ativos: 0,
 };
 
 export function PortfolioProvider({ children }: { children: ReactNode }) {
@@ -60,7 +61,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const userId = user?.id;
 
   const [currency, setCurrencyState] = useState<Currency>('BRL');
-  const [macroAllocation, setMacroAllocationState] = useState<MacroAllocation>({ brasil: 60, exterior: 40 });
+  const [macroAllocation, setMacroAllocationState] = useState<MacroAllocation>({ brasil: 60, exterior: 40, cripto: 0 });
   const [categoryTargets, setCategoryTargetsState] = useState<CategoryTarget>(DEFAULT_TARGETS);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [exchangeRates, setExchangeRates] = useState({ USD_BRL: 5.2, EUR_BRL: 5.7, USD_EUR: 0.92 });
@@ -98,7 +99,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
       if (portfolio) {
         setCurrencyState(portfolio.currency as Currency);
-        setMacroAllocationState({ brasil: Number(portfolio.macro_brasil), exterior: Number(portfolio.macro_exterior) });
+        setMacroAllocationState({ brasil: Number(portfolio.macro_brasil), exterior: Number(portfolio.macro_exterior), cripto: Number(portfolio.macro_cripto || 0) });
         if (portfolio.category_targets) setCategoryTargetsState(portfolio.category_targets as CategoryTarget);
       } else {
         await supabase.from('portfolios').insert({
@@ -106,6 +107,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           currency: 'BRL',
           macro_brasil: 60,
           macro_exterior: 40,
+          macro_cripto: 0,
           category_targets: DEFAULT_TARGETS,
         });
       }
@@ -139,15 +141,17 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       currency: cur,
       macro_brasil: macro.brasil,
       macro_exterior: macro.exterior,
+      macro_cripto: macro.cripto,
       category_targets: targets,
       updated_at: new Date().toISOString(),
     }).eq('user_id', userId);
   }, [userId]);
 
-  const getMacroFromTargets = useCallback((): { brasil: number; exterior: number } => {
+  const getMacroFromTargets = useCallback((): { brasil: number; exterior: number; cripto: number } => {
     const brasil = MACRO_CATEGORIES.brasil.reduce((s, c) => s + (categoryTargets[c] || 0), 0);
     const exterior = MACRO_CATEGORIES.exterior.reduce((s, c) => s + (categoryTargets[c] || 0), 0);
-    return { brasil, exterior };
+    const cripto = MACRO_CATEGORIES.cripto.reduce((s, c) => s + (categoryTargets[c] || 0), 0);
+    return { brasil, exterior, cripto };
   }, [categoryTargets]);
 
   const getTotalTargets = useCallback(() => {
@@ -157,7 +161,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
     const macro = getMacroFromTargets();
-    savePortfolioSettings(c, { brasil: macro.brasil, exterior: macro.exterior }, categoryTargets);
+    savePortfolioSettings(c, { brasil: macro.brasil, exterior: macro.exterior, cripto: macro.cripto }, categoryTargets);
   }, [categoryTargets, savePortfolioSettings, getMacroFromTargets]);
 
   const setMacroAllocation = useCallback((a: MacroAllocation) => {
@@ -171,6 +175,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       const macro = {
         brasil: MACRO_CATEGORIES.brasil.reduce((s, c) => s + (next[c] || 0), 0),
         exterior: MACRO_CATEGORIES.exterior.reduce((s, c) => s + (next[c] || 0), 0),
+        cripto: MACRO_CATEGORIES.cripto.reduce((s, c) => s + (next[c] || 0), 0),
       };
       setMacroAllocationState(macro);
       savePortfolioSettings(currency, macro, next);
@@ -183,6 +188,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     const macro = {
       brasil: MACRO_CATEGORIES.brasil.reduce((s, c) => s + (targets[c] || 0), 0),
       exterior: MACRO_CATEGORIES.exterior.reduce((s, c) => s + (targets[c] || 0), 0),
+      cripto: MACRO_CATEGORIES.cripto.reduce((s, c) => s + (targets[c] || 0), 0),
     };
     setMacroAllocationState(macro);
     savePortfolioSettings(currency, macro, targets);
@@ -294,7 +300,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     const normFactor = 100 / totalTargets;
 
     // Calculate gap for each category (target vs actual as % of total)
-    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior];
+    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior, ...MACRO_CATEGORIES.cripto];
     const catAnalysis = allCats.map(cat => {
       const catValue = getCategoryValue(cat);
       const actualPct = currentTotal > 0 ? (catValue / currentTotal) * 100 : 0;
@@ -380,7 +386,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     if (total === 0) return;
 
     const newTargets: CategoryTarget = {};
-    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior];
+    const allCats = [...MACRO_CATEGORIES.brasil, ...MACRO_CATEGORIES.exterior, ...MACRO_CATEGORIES.cripto];
     let sum = 0;
     for (const cat of allCats) {
       const catValue = getCategoryValue(cat);

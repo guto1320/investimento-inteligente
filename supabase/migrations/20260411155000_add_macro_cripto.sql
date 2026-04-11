@@ -1,0 +1,1 @@
+ALTER TABLE public.portfolios ADD COLUMN IF NOT EXISTS macro_cripto NUMERIC NOT NULL DEFAULT 0;

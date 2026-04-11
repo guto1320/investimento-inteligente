@@ -8,9 +8,10 @@ export type AssetCategory =
   | 'ext_renda_fixa'
   | 'ext_stocks'
   | 'ext_reits'
-  | 'ext_etfs';
+  | 'ext_etfs'
+  | 'cripto_ativos';
 
-export type MacroCategory = 'brasil' | 'exterior';
+export type MacroCategory = 'brasil' | 'exterior' | 'cripto';
 
 export interface Asset {
   id: string;
@@ -32,6 +33,7 @@ export interface CategoryConfig {
 export interface MacroAllocation {
   brasil: number; // percentage
   exterior: number;
+  cripto: number;
 }
 
 export const CATEGORY_LABELS: Record<AssetCategory, string> = {
@@ -43,11 +45,13 @@ export const CATEGORY_LABELS: Record<AssetCategory, string> = {
   ext_stocks: 'Stocks',
   ext_reits: 'REITs',
   ext_etfs: 'ETFs (EXT)',
+  cripto_ativos: 'Criptoativos',
 };
 
 export const MACRO_CATEGORIES: Record<MacroCategory, AssetCategory[]> = {
   brasil: ['br_renda_fixa', 'br_acoes', 'br_etfs', 'br_fiis'],
   exterior: ['ext_renda_fixa', 'ext_stocks', 'ext_reits', 'ext_etfs'],
+  cripto: ['cripto_ativos'],
 };
 
 export const CATEGORY_COLORS: Record<AssetCategory, string> = {
@@ -59,4 +63,5 @@ export const CATEGORY_COLORS: Record<AssetCategory, string> = {
   ext_stocks: 'hsl(var(--chart-6))',
   ext_reits: 'hsl(160 80% 60%)',
   ext_etfs: 'hsl(200 80% 65%)',
+  cripto_ativos: '#F7931A',
 };

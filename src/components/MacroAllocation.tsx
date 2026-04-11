@@ -2,7 +2,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { Slider } from '@/components/ui/slider';
 import { MACRO_CATEGORIES, CATEGORY_LABELS, AssetCategory } from '@/types/portfolio';
 import { formatCurrency } from './CurrencySelector';
-import { Globe, MapPin, Target, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Bitcoin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
@@ -52,7 +52,7 @@ export function MacroAllocation() {
       </div>
 
       {/* Macro summary (derived from categories) */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <MapPin className="w-3.5 h-3.5 text-primary" />
@@ -67,14 +67,21 @@ export function MacroAllocation() {
           </div>
           <p className="text-lg font-bold text-chart-2">{macroTargets.exterior}%</p>
         </div>
+        <div className="bg-secondary/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Bitcoin className="w-3.5 h-3.5" style={{ color: '#F7931A' }} />
+            <span className="text-xs font-medium text-muted-foreground">Cripto (objetivo)</span>
+          </div>
+          <p className="text-lg font-bold" style={{ color: '#F7931A' }}>{macroTargets.cripto}%</p>
+        </div>
       </div>
 
       {/* Category sliders — % of total */}
       <div className="space-y-4">
-        {(['brasil', 'exterior'] as const).map(macro => (
+        {(['brasil', 'exterior', 'cripto'] as const).map(macro => (
           <div key={macro} className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {macro === 'brasil' ? '🇧🇷 Brasil' : '🌎 Exterior'}
+              {macro === 'brasil' ? '🇧🇷 Brasil' : macro === 'exterior' ? '🌎 Exterior' : '₿ Criptoativos'}
             </p>
             {MACRO_CATEGORIES[macro].map(cat => {
               const catValue = getCategoryValue(cat);

@@ -17,8 +17,10 @@ export function PortfolioOverview() {
 
   const brasilValue = MACRO_CATEGORIES.brasil.reduce((s, c) => s + getCategoryValue(c), 0);
   const exteriorValue = MACRO_CATEGORIES.exterior.reduce((s, c) => s + getCategoryValue(c), 0);
+  const criptoValue = MACRO_CATEGORIES.cripto.reduce((s, c) => s + getCategoryValue(c), 0);
   const brasilPct = total > 0 ? (brasilValue / total) * 100 : 0;
   const exteriorPct = total > 0 ? (exteriorValue / total) * 100 : 0;
+  const criptoPct = total > 0 ? (criptoValue / total) * 100 : 0;
 
   if (total === 0) {
     return (
@@ -40,7 +42,7 @@ export function PortfolioOverview() {
         <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency, valuesHidden)}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🇧🇷 Brasil</p>
           <p className="text-lg font-bold">{formatCurrency(brasilValue, currency, valuesHidden)}</p>
@@ -59,6 +61,16 @@ export function PortfolioOverview() {
               {exteriorPct.toFixed(1)}%
             </span>
             <span className="text-xs text-muted-foreground">/ {macroTargets.exterior}%</span>
+          </div>
+        </div>
+        <div className="bg-secondary/50 rounded-lg p-3">
+          <p className="text-xs text-muted-foreground">₿ Cripto</p>
+          <p className="text-lg font-bold">{formatCurrency(criptoValue, currency, valuesHidden)}</p>
+          <div className="flex items-center gap-1 mt-1">
+            <span className={`text-xs font-medium ${Math.abs(criptoPct - macroTargets.cripto) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+              {criptoPct.toFixed(1)}%
+            </span>
+            <span className="text-xs text-muted-foreground">/ {macroTargets.cripto}%</span>
           </div>
         </div>
       </div>
