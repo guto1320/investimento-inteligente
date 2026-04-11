@@ -16,7 +16,7 @@ interface PortfolioState {
   setCategoryTarget: (cat: AssetCategory, pct: number) => void;
   setCategoryTargets: (targets: CategoryTarget) => void;
   assets: Asset[];
-  addAsset: (asset: Omit<Asset, 'id'>) => void;
+  addAsset: (asset: Omit<Asset, 'id'> & { initialDate?: string }) => void;
   removeAsset: (id: string) => void;
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   updateAssetWeight: (id: string, weight: number) => void;
@@ -249,7 +249,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     } catch { return null; }
   }, []);
 
-  const addAsset = useCallback(async (asset: Omit<Asset, 'id'>) => {
+  const addAsset = useCallback(async (asset: Omit<Asset, 'id'> & { initialDate?: string }) => {
     if (!userId) return;
     const id = crypto.randomUUID();
     const newAsset = { ...asset, id };
@@ -272,7 +272,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         id: txId,
         assetId: id,
         type: 'buy',
-        date: new Date().toISOString(),
+        date: asset.initialDate || new Date().toISOString(),
         quantity: asset.quantity,
         price: asset.currentPrice
       };

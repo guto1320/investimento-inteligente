@@ -82,7 +82,7 @@ export function AssetManager() {
                 category={cat}
                 assets={assets.filter(a => a.category === cat)}
                 displayCurrency={currency}
-                onAdd={(ticker, qty) => {
+                onAdd={(ticker, qty, price, initialDate) => {
                   let finalTicker = ticker.toUpperCase();
                   if (cat === 'cripto_ativos' && !finalTicker.includes('-')) {
                     finalTicker = `${finalTicker}-USD`;
@@ -90,10 +90,11 @@ export function AssetManager() {
                   addAsset({
                     ticker: finalTicker,
                     quantity: qty,
-                    currentPrice: 0,
+                    currentPrice: price || 0,
                     priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
                     targetWeight: 0,
                     category: cat,
+                    initialDate: initialDate || undefined,
                   });
                 }}
                 onRemove={removeAsset}
@@ -201,7 +202,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
   category: AssetCategory;
   assets: any[];
   displayCurrency: Currency;
-  onAdd: (ticker: string, qty: number) => void;
+  onAdd: (ticker: string, qty: number, price?: number, date?: string) => void;
   onRemove: (id: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
   onUpdateWeight: (id: string, weight: number) => void;
@@ -214,15 +215,19 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
   const { transactions, addTransaction, removeTransaction } = usePortfolio();
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [isOpen, setIsOpen] = useState(false);
 
   const catValue = getCategoryValue();
 
   const handleAdd = () => {
-    if (!newTicker || !newQty) return;
-    onAdd(newTicker, parseFloat(newQty));
+    if (!newTicker || !newQty || !newPrice) return;
+    onAdd(newTicker, parseFloat(newQty), parseFloat(newPrice), newDate);
     setNewTicker('');
     setNewQty('');
+    setNewPrice('');
+    setNewDate(new Date().toISOString().split('T')[0]);
   };
 
   const getPlaceholder = () => {
@@ -324,26 +329,44 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
             );
           })}
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2 items-center">
             <Input
               placeholder={getPlaceholder()}
               value={newTicker}
               onChange={e => setNewTicker(e.target.value)}
-              className="h-8 text-xs flex-1"
+              className="h-8 text-[11px] min-w-[120px] flex-1"
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
             />
-            <Input
-              type="number"
-              step="any"
-              placeholder="Qtd"
-              value={newQty}
-              onChange={e => setNewQty(e.target.value)}
-              className="h-8 text-xs w-24"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            />
-            <Button size="sm" onClick={handleAdd} className="h-8 px-3">
-              <Plus className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+              <Input
+                type="number"
+                step="any"
+                placeholder="Qtd (un)"
+                value={newQty}
+                onChange={e => setNewQty(e.target.value)}
+                className="h-8 text-[11px] w-full sm:w-20"
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              />
+              <Input
+                type="number"
+                step="any"
+                placeholder="Preço (R$)"
+                value={newPrice}
+                onChange={e => setNewPrice(e.target.value)}
+                className="h-8 text-[11px] w-full sm:w-20"
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              />
+              <Input
+                type="date"
+                value={newDate}
+                onChange={e => setNewDate(e.target.value)}
+                className="h-8 text-[11px] w-full sm:w-32"
+                onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              />
+              <Button size="sm" onClick={handleAdd} className="h-8 px-3 w-full sm:w-auto">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
