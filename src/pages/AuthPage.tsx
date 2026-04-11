@@ -44,7 +44,7 @@ export default function AuthPage() {
           <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto">
             <TrendingUp className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-gradient">AportAI</h1>
+          <h1 className="text-2xl font-bold text-gradient">Assistente de Aportes</h1>
           <p className="text-sm text-muted-foreground">Gestão inteligente de aportes</p>
         </div>
 
