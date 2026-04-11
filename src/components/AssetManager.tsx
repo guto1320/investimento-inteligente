@@ -378,6 +378,8 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
   const [type, setType] = useState('buy');
   const [qty, setQty] = useState('');
   const [price, setPrice] = useState('');
+  const [exchange, setExchange] = useState('');
+  const [costs, setCosts] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const handleAdd = () => {
@@ -387,10 +389,14 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
       type: type as 'buy' | 'sell',
       date: new Date(date).toISOString(),
       quantity: parseFloat(qty),
-      price: parseFloat(price)
+      price: parseFloat(price),
+      exchangeRate: exchange ? parseFloat(exchange) : undefined,
+      operationalCosts: costs ? parseFloat(costs) : undefined
     });
     setQty('');
     setPrice('');
+    setExchange('');
+    setCosts('');
   };
 
   return (
@@ -426,6 +432,16 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
                <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
                <Input type="number" step="any" value={price} onChange={e => setPrice(e.target.value)} className="h-9" />
              </div>
+             {asset.priceCurrency === 'USD' && (
+               <div className="space-y-1 w-20">
+                 <span className="text-[10px] uppercase font-semibold text-muted-foreground">Câmbio</span>
+                 <Input type="number" step="any" placeholder="Ex: 5" value={exchange} onChange={e => setExchange(e.target.value)} className="h-9" />
+               </div>
+             )}
+             <div className="space-y-1 w-20">
+               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Custos</span>
+               <Input type="number" step="any" value={costs} onChange={e => setCosts(e.target.value)} className="h-9" />
+             </div>
              <Button onClick={handleAdd} className="h-9 px-3"><Plus className="w-4 h-4" /></Button>
            </div>
            
@@ -438,7 +454,14 @@ function TransactionModal({ asset, transactions, addTransaction, removeTransacti
                    </div>
                    <span className="w-24 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</span>
                    <span className="w-20 font-medium text-right">{t.quantity} un</span>
-                   <span className="w-24 font-mono text-right">{t.price.toFixed(2)}</span>
+                   <span className="w-24 font-mono text-right flex flex-col items-end">
+                     {t.price.toFixed(2)}
+                     {(t.operationalCosts > 0 || t.exchangeRate > 0) && (
+                       <span className="text-[9px] text-muted-foreground leading-tight mt-1 truncate">
+                         {t.exchangeRate ? `Câmbio: ${t.exchangeRate} ` : ''}{t.operationalCosts ? `Custos: ${t.operationalCosts}` : ''}
+                       </span>
+                     )}
+                   </span>
                  </div>
                  <button onClick={() => removeTransaction(t.id, asset.id)} className="text-muted-foreground hover:text-destructive transiton-colors ml-4 p-1">
                    <Trash2 className="w-4 h-4" />

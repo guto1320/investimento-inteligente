@@ -62,6 +62,8 @@ export type Database = {
           date: string
           quantity: number
           price: number
+          exchange_rate: number | null
+          operational_costs: number | null
           created_at: string
         }
         Insert: {
@@ -72,6 +74,8 @@ export type Database = {
           date: string
           quantity: number
           price: number
+          exchange_rate?: number | null
+          operational_costs?: number | null
           created_at?: string
         }
         Update: {
@@ -82,6 +86,8 @@ export type Database = {
           date?: string
           quantity?: number
           price?: number
+          exchange_rate?: number | null
+          operational_costs?: number | null
           created_at?: string
         }
         Relationships: [

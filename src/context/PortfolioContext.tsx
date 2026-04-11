@@ -146,6 +146,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           date: t.date,
           quantity: Number(t.quantity),
           price: Number(t.price),
+          exchangeRate: t.exchange_rate ? Number(t.exchange_rate) : undefined,
+          operationalCosts: t.operational_costs ? Number(t.operational_costs) : undefined,
         })));
       }
 
@@ -343,7 +345,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       type: tx.type,
       date: tx.date,
       quantity: tx.quantity,
-      price: tx.price
+      price: tx.price,
+      exchange_rate: tx.exchangeRate || null,
+      operational_costs: tx.operationalCosts || null
     });
     
     const asset = assets.find(a => a.id === tx.assetId);

@@ -30,6 +30,8 @@ export interface Transaction {
   date: string;
   quantity: number;
   price: number;
+  exchangeRate?: number;
+  operationalCosts?: number;
 }
 
 export interface CategoryConfig {
