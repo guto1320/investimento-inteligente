@@ -82,6 +82,7 @@ export function AssetManager() {
                 key={cat}
                 category={cat}
                 assets={assets.filter(a => a.category === cat)}
+                displayCurrency={currency}
                 onAdd={(ticker, qty) => {
                   let finalTicker = ticker.toUpperCase();
                   if (cat === 'cripto_ativos' && !finalTicker.includes('-')) {
@@ -201,7 +202,7 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
   assets: any[];
   displayCurrency: Currency;
   isForeign?: boolean;
-  onAdd: (ticker: string, qty: number, price?: number, date?: string, exchange?: number, costs?: number) => void;
+  onAdd: (ticker: string, qty: number) => void;
   onRemove: (id: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
   onUpdateWeight: (id: string, weight: number) => void;
@@ -211,27 +212,18 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
   isLoadingPrices: boolean;
   valuesHidden: boolean;
 }) {
-  const { transactions, addTransaction, removeTransaction } = usePortfolio();
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newExchange, setNewExchange] = useState('');
-  const [newCosts, setNewCosts] = useState('');
-  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [isOpen, setIsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const catValue = getCategoryValue();
 
   const handleAdd = () => {
-    if (!newTicker || !newQty || !newPrice) return;
-    onAdd(newTicker, parseFloat(newQty), parseFloat(newPrice), newDate, newExchange ? parseFloat(newExchange) : undefined, newCosts ? parseFloat(newCosts) : undefined);
+    if (!newTicker || !newQty) return;
+    onAdd(newTicker, parseFloat(newQty));
     setNewTicker('');
     setNewQty('');
-    setNewPrice('');
-    setNewExchange('');
-    setNewCosts('');
-    setNewDate(new Date().toISOString().split('T')[0]);
     setIsAddOpen(false);
   };
 
