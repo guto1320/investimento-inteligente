@@ -382,7 +382,7 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full text-xs h-9 border-dashed text-muted-foreground hover:text-foreground">
                   <Plus className="w-4 h-4 mr-2" />
-                  Cadastrar Primeira Transação (Obter {CATEGORY_LABELS[category]})
+                  Cadastrar Transação
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md w-[95vw]">
