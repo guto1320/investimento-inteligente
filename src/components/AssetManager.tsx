@@ -9,7 +9,7 @@ import { Plus, Trash2, Scale, RefreshCw, Loader2 } from 'lucide-react';
 import { ImportAssets } from './ImportAssets';
 
 export function AssetManager() {
-  const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices } = usePortfolio();
+  const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices, valuesHidden } = usePortfolio();
 
   return (
     <div className="space-y-4">
@@ -57,6 +57,7 @@ export function AssetManager() {
               getValueInCurrency={getValueInCurrency}
               getCategoryValue={() => getCategoryValue(cat)}
               isLoadingPrices={isLoadingPrices}
+              valuesHidden={valuesHidden}
             />
           ))}
         </div>
@@ -65,7 +66,7 @@ export function AssetManager() {
   );
 }
 
-function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices }: {
+function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices, valuesHidden }: {
   category: AssetCategory;
   assets: any[];
   displayCurrency: Currency;
@@ -77,6 +78,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
   getValueInCurrency: (value: number, from: Currency) => number;
   getCategoryValue: () => number;
   isLoadingPrices: boolean;
+  valuesHidden: boolean;
 }) {
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
@@ -104,7 +106,8 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
           </span>
         </div>
         <span className="text-sm font-semibold text-primary">
-          {formatCurrency(catValue, displayCurrency)}
+          {formatCurrency(catValue, displayCurrency, valuesHidden)}
+        </span>
         </span>
       </button>
 
@@ -131,7 +134,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
                     <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
                     <span className="text-xs text-muted-foreground">
                       {asset.quantity} un × {asset.currentPrice > 0
-                        ? formatCurrency(asset.currentPrice, asset.priceCurrency)
+                        ? formatCurrency(asset.currentPrice, asset.priceCurrency, valuesHidden)
                         : <span className="inline-flex items-center gap-1 text-warning">
                             {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                             buscando...
@@ -141,7 +144,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">
-                      {asset.currentPrice > 0 ? formatCurrency(assetValue, displayCurrency) : '—'}
+                      {asset.currentPrice > 0 ? formatCurrency(assetValue, displayCurrency, valuesHidden) : '—'}
                     </span>
                     <button onClick={() => onRemove(asset.id)} className="text-muted-foreground hover:text-destructive transition-colors">
                       <Trash2 className="w-4 h-4" />

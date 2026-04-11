@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, ArrowRight, Zap, AlertTriangle, Info } from 'lucide-react';
 
 export function NextInvestment() {
-  const { getNextInvestment, currency, getTotalTargets } = usePortfolio();
+  const { getNextInvestment, currency, getTotalTargets, valuesHidden } = usePortfolio();
   const [amount, setAmount] = useState('');
   const [suggestions, setSuggestions] = useState<InvestmentSuggestion[]>([]);
 
@@ -69,7 +69,8 @@ export function NextInvestment() {
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Sugestão de alocação:</p>
             <p className="text-xs text-muted-foreground">
-              Total: {formatCurrency(totalSuggested, currency)}
+              Total: {formatCurrency(totalSuggested, currency, valuesHidden)}
+            </p>
             </p>
           </div>
 
@@ -100,7 +101,7 @@ export function NextInvestment() {
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(catTotal, currency)}
+                    {formatCurrency(catTotal, currency, valuesHidden)}
                   </span>
                 </div>
 
@@ -116,7 +117,7 @@ export function NextInvestment() {
                       )}
                     </div>
                     <span className="text-sm font-semibold text-foreground shrink-0">
-                      {formatCurrency(s.amount, currency)}
+                      {formatCurrency(s.amount, currency, valuesHidden)}
                     </span>
                   </div>
                 ))}
