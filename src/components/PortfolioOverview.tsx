@@ -42,8 +42,8 @@ export function PortfolioOverview() {
         <p className="text-2xl font-bold text-gradient">{formatCurrency(total, currency, valuesHidden)}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-secondary/50 rounded-lg p-3">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🇧🇷 Brasil</p>
           <p className="text-lg font-bold">{formatCurrency(brasilValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">
@@ -53,7 +53,7 @@ export function PortfolioOverview() {
             <span className="text-xs text-muted-foreground">/ {macroTargets.brasil}%</span>
           </div>
         </div>
-        <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">🌎 Exterior</p>
           <p className="text-lg font-bold">{formatCurrency(exteriorValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">
@@ -63,7 +63,7 @@ export function PortfolioOverview() {
             <span className="text-xs text-muted-foreground">/ {macroTargets.exterior}%</span>
           </div>
         </div>
-        <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <p className="text-xs text-muted-foreground">₿ Cripto</p>
           <p className="text-lg font-bold">{formatCurrency(criptoValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">

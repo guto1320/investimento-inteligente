@@ -52,22 +52,22 @@ export function MacroAllocation() {
       </div>
 
       {/* Macro summary (derived from categories) */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-secondary/50 rounded-lg p-3">
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <MapPin className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs font-medium text-muted-foreground">Brasil (objetivo)</span>
           </div>
           <p className="text-lg font-bold text-primary">{macroTargets.brasil}%</p>
         </div>
-        <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Globe className="w-3.5 h-3.5 text-chart-2" />
             <span className="text-xs font-medium text-muted-foreground">Exterior (objetivo)</span>
           </div>
           <p className="text-lg font-bold text-chart-2">{macroTargets.exterior}%</p>
         </div>
-        <div className="bg-secondary/50 rounded-lg p-3">
+        <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Bitcoin className="w-3.5 h-3.5" style={{ color: '#F7931A' }} />
             <span className="text-xs font-medium text-muted-foreground">Cripto (objetivo)</span>
