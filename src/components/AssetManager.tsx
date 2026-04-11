@@ -223,6 +223,19 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
     setNewQty('');
   };
 
+  const getPlaceholder = () => {
+    switch(category) {
+      case 'br_acoes': return "Ticker (ex: PETR4, VALE3)";
+      case 'br_fiis': return "Ticker (ex: MXRF11, HGLG11)";
+      case 'br_etfs': return "Ticker (ex: BOVA11, IVVB11)";
+      case 'ext_stocks': return "Ticker (ex: AAPL, MSFT)";
+      case 'ext_reits': return "Ticker (ex: VNQ, O)";
+      case 'ext_etfs': return "Ticker (ex: VOO, QQQ)";
+      case 'cripto_ativos': return "Ticker (ex: BTC, ETH)";
+      default: return "Ticker";
+    }
+  };
+
   return (
     <div className="glass-card overflow-hidden">
       <button
@@ -311,7 +324,7 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
 
           <div className="flex gap-2 pt-2">
             <Input
-              placeholder="Ticker (ex: PETR4, AAPL)"
+              placeholder={getPlaceholder()}
               value={newTicker}
               onChange={e => setNewTicker(e.target.value)}
               className="h-8 text-xs flex-1"
