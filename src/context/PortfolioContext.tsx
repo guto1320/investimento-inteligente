@@ -21,9 +21,7 @@ interface PortfolioState {
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   updateAssetWeight: (id: string, weight: number) => void;
   distributeEqually: (category: AssetCategory) => void;
-  transactions: Transaction[];
-  addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
-  removeTransaction: (id: string, assetId: string) => Promise<void>;
+  distributeEqually: (category: AssetCategory) => void;
   exchangeRates: { USD_BRL: number; EUR_BRL: number; USD_EUR: number };
   getValueInCurrency: (value: number, from: Currency) => number;
   getTotalValue: () => number;
@@ -67,7 +65,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [macroAllocation, setMacroAllocationState] = useState<MacroAllocation>({ brasil: 60, exterior: 40, cripto: 0 });
   const [categoryTargets, setCategoryTargetsState] = useState<CategoryTarget>(DEFAULT_TARGETS);
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [exchangeRates, setExchangeRates] = useState({ USD_BRL: 5.2, EUR_BRL: 5.7, USD_EUR: 0.92 });
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -133,23 +130,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      const { data: dbTx } = await supabase
-        .from('portfolio_transactions')
-        .select('*')
-        .eq('user_id', userId);
 
-      if (dbTx) {
-        setTransactions(dbTx.map(t => ({
-          id: t.id,
-          assetId: t.asset_id,
-          type: t.type as 'buy'|'sell',
-          date: t.date,
-          quantity: Number(t.quantity),
-          price: Number(t.price),
-          exchangeRate: t.exchange_rate ? Number(t.exchange_rate) : undefined,
-          operationalCosts: t.operational_costs ? Number(t.operational_costs) : undefined,
-        })));
-      }
 
       setIsLoading(false);
     };
@@ -251,7 +232,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     } catch { return null; }
   }, []);
 
-  const addAsset = useCallback(async (asset: Omit<Asset, 'id'> & { initialDate?: string; initialExchangeRate?: number; initialOperationalCosts?: number }) => {
+  const addAsset = useCallback(async (asset: Omit<Asset, 'id'>) => {
     if (!userId) return;
     const id = crypto.randomUUID();
     const newAsset = { ...asset, id };
@@ -267,32 +248,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       target_weight: asset.targetWeight,
       category: asset.category,
     });
-
-    if (asset.quantity > 0) {
-      const txId = crypto.randomUUID();
-      const tx: Transaction = {
-        id: txId,
-        assetId: id,
-        type: 'buy',
-        date: asset.initialDate || new Date().toISOString(),
-        quantity: asset.quantity,
-        price: asset.currentPrice,
-        exchangeRate: asset.initialExchangeRate,
-        operationalCosts: asset.initialOperationalCosts
-      };
-      setTransactions(prev => [...prev, tx]);
-      await supabase.from('portfolio_transactions').insert({
-        id: txId,
-        asset_id: id,
-        user_id: userId,
-        type: 'buy',
-        date: tx.date,
-        quantity: tx.quantity,
-        price: tx.price,
-        exchange_rate: tx.exchangeRate || null,
-        operational_costs: tx.operationalCosts || null
-      });
-    }
 
     setIsLoadingPrices(true);
     const results = await fetchTickerPrices([asset.ticker]);
@@ -335,50 +290,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     catAssets.forEach(a => updateAssetWeight(a.id, weight));
   }, [assets, updateAssetWeight]);
 
-  const addTransaction = useCallback(async (tx: Omit<Transaction, 'id'>) => {
-    if (!userId) return;
-    const id = crypto.randomUUID();
-    const newTx = { ...tx, id };
-    
-    setTransactions(prev => [...prev, newTx]);
-    
-    await supabase.from('portfolio_transactions').insert({
-      id,
-      asset_id: tx.assetId,
-      user_id: userId,
-      type: tx.type,
-      date: tx.date,
-      quantity: tx.quantity,
-      price: tx.price,
-      exchange_rate: tx.exchangeRate || null,
-      operational_costs: tx.operationalCosts || null
-    });
-    
-    const asset = assets.find(a => a.id === tx.assetId);
-    if (asset) {
-       const qtyChange = tx.type === 'buy' ? tx.quantity : -tx.quantity;
-       const newQty = Math.max(0, asset.quantity + qtyChange);
-       updateAsset(tx.assetId, { quantity: newQty });
-    }
-  }, [userId, assets, updateAsset]);
 
-  const removeTransaction = useCallback(async (id: string, assetId: string) => {
-    setTransactions(prev => {
-      const tx = prev.find(t => t.id === id);
-      if (!tx) return prev;
-      
-      const newTransactions = prev.filter(t => t.id !== id);
-      supabase.from('portfolio_transactions').delete().eq('id', id).then();
-      
-      const asset = assets.find(a => a.id === assetId);
-      if (asset) {
-         const qtyChange = tx.type === 'buy' ? -tx.quantity : tx.quantity;
-         const newQty = Math.max(0, asset.quantity + qtyChange);
-         updateAsset(assetId, { quantity: newQty });
-      }
-      return newTransactions;
-    });
-  }, [assets, updateAsset]);
 
   // ---- IMPROVED INVESTMENT SUGGESTION ----
   const getNextInvestment = useCallback((amount: number): InvestmentSuggestion[] => {
@@ -521,7 +433,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       macroAllocation, setMacroAllocation,
       categoryTargets, setCategoryTarget, setCategoryTargets,
       assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually,
-      transactions, addTransaction, removeTransaction,
       exchangeRates, getValueInCurrency, getTotalValue, getCategoryValue,
       getNextInvestment, refreshPrices, syncTargetsToActual,
       getTotalTargets, getMacroFromTargets,

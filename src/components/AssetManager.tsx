@@ -14,32 +14,6 @@ function isFixedIncome(cat: AssetCategory) {
   return FIXED_INCOME_CATEGORIES.includes(cat);
 }
 
-function calculateAveragePrice(txs: any[]) {
-  if (!txs || txs.length === 0) return 0;
-  
-  const sortedTxs = [...txs].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  let totalQty = 0;
-  let totalCost = 0;
-  
-  for (const t of sortedTxs) {
-    if (t.type === 'buy') {
-      totalCost += (t.price * t.quantity);
-      totalQty += t.quantity;
-    } else if (t.type === 'sell') {
-      if (totalQty > 0) {
-        const avgPrice = totalCost / totalQty;
-        totalQty -= t.quantity;
-        totalCost -= (t.quantity * avgPrice);
-      }
-      if (totalQty <= 0) {
-        totalQty = 0;
-        totalCost = 0;
-      }
-    }
-  }
-  
-  return totalQty > 0 ? (totalCost / totalQty) : 0;
-}
 
 export function AssetManager() {
   const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices, valuesHidden } = usePortfolio();
@@ -106,9 +80,7 @@ export function AssetManager() {
                 key={cat}
                 category={cat}
                 assets={assets.filter(a => a.category === cat)}
-                displayCurrency={currency}
-                isForeign={macro !== 'brasil'}
-                onAdd={(ticker, qty, price, initialDate, exchange, costs) => {
+                onAdd={(ticker, qty) => {
                   let finalTicker = ticker.toUpperCase();
                   if (cat === 'cripto_ativos' && !finalTicker.includes('-')) {
                     finalTicker = `${finalTicker}-USD`;
@@ -116,13 +88,10 @@ export function AssetManager() {
                   addAsset({
                     ticker: finalTicker,
                     quantity: qty,
-                    currentPrice: price || 0,
+                    currentPrice: 0,
                     priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
                     targetWeight: 0,
                     category: cat,
-                    initialDate: initialDate || undefined,
-                    initialExchangeRate: exchange,
-                    initialOperationalCosts: costs,
                   });
                 }}
                 onRemove={removeAsset}
@@ -308,35 +277,21 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
           {assets.map(asset => {
             const assetValue = getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency);
             const pct = catValue > 0 ? (assetValue / catValue) * 100 : 0;
-            
-            const assetTxs = transactions.filter(t => t.assetId === asset.id);
-            const avgPrice = calculateAveragePrice(assetTxs);
-            let profitability = 0;
-            if (avgPrice > 0 && asset.currentPrice > 0) {
-              profitability = ((asset.currentPrice / avgPrice) - 1) * 100;
-            }
 
             return (
               <div key={asset.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {asset.quantity} un × {asset.currentPrice > 0
-                          ? formatCurrency(asset.currentPrice, asset.priceCurrency, valuesHidden)
-                          : <span className="inline-flex items-center gap-1 text-warning">
-                              {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                              buscando...
-                            </span>
-                        }
-                      </span>
-                      {asset.currentPrice > 0 && avgPrice > 0 && (
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${profitability >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                          {profitability > 0 ? '+' : ''}{profitability.toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {asset.quantity} un × {asset.currentPrice > 0
+                        ? formatCurrency(asset.currentPrice, asset.priceCurrency, valuesHidden)
+                        : <span className="inline-flex items-center gap-1 text-warning">
+                            {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                            buscando...
+                          </span>
+                      }
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">
@@ -349,14 +304,15 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-xs text-muted-foreground shrink-0">Saldo em Carteira:</span>
-                  <span className="font-mono font-bold text-sm">{asset.quantity} un</span>
-                  <TransactionModal
-                    asset={asset}
-                    transactions={transactions.filter(t => t.assetId === asset.id)}
-                    addTransaction={addTransaction}
-                    removeTransaction={removeTransaction}
+                  <span className="text-xs text-muted-foreground shrink-0">Quantidade:</span>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={asset.quantity}
+                    onChange={(e) => onUpdateQuantity(asset.id, parseFloat(e.target.value) || 0)}
+                    className="h-7 text-xs w-24"
                   />
+                  <div className="text-xs text-muted-foreground">un</div>
                 </div>
 
                 <div className="space-y-1">
@@ -377,41 +333,26 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
             );
           })}
 
-          <div className="pt-2">
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full text-xs h-9 border-dashed text-muted-foreground hover:text-foreground">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Cadastrar Transação
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md w-[95vw]">
-                <DialogHeader>
-                  <DialogTitle>Novo Ativo: {CATEGORY_LABELS[category]}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">Ticker</span>
-                    <Input placeholder={getPlaceholder()} value={newTicker} onChange={e => setNewTicker(e.target.value)} className="h-9" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Data da Compra</span>
-                      <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
-                      <Input type="number" step="any" placeholder={isForeign ? "Preço (USD)" : "Preço (R$)"} value={newPrice} onChange={e => setNewPrice(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
-                      <Input type="number" step="any" placeholder="Quantidade" value={newQty} onChange={e => setNewQty(e.target.value)} className="h-9" />
-                    </div>
-                  </div>
-                  <Button onClick={handleAdd} className="w-full">Cadastrar Ativo</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+          <div className="flex gap-2 pt-2">
+            <Input
+              placeholder={getPlaceholder()}
+              value={newTicker}
+              onChange={e => setNewTicker(e.target.value)}
+              className="h-8 text-xs flex-1"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <Input
+              type="number"
+              step="any"
+              placeholder="Qtd"
+              value={newQty}
+              onChange={e => setNewQty(e.target.value)}
+              className="h-8 text-xs w-24"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <Button size="sm" onClick={handleAdd} className="h-8 px-3">
+              <Plus className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       )}
@@ -419,89 +360,3 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
   );
 }
 
-function TransactionModal({ asset, transactions, addTransaction, removeTransaction }: any) {
-  const [type, setType] = useState('buy');
-  const [qty, setQty] = useState('');
-  const [price, setPrice] = useState('');
-  const [exchange, setExchange] = useState('');
-  const [costs, setCosts] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-
-  const handleAdd = () => {
-    if (!qty || !price || !date) return;
-    addTransaction({
-      assetId: asset.id,
-      type: type as 'buy' | 'sell',
-      date: new Date(date).toISOString(),
-      quantity: parseFloat(qty),
-      price: parseFloat(price),
-      exchangeRate: exchange ? parseFloat(exchange) : undefined,
-      operationalCosts: costs ? parseFloat(costs) : undefined
-    });
-    setQty('');
-    setPrice('');
-    setExchange('');
-    setCosts('');
-  };
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 px-2">
-          <History className="w-3.5 h-3.5" />
-           Registrar Compra/Venda
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl w-[95vw] sm:w-[90vw]">
-        <DialogHeader>
-          <DialogTitle>Diário de Transações ({asset.ticker})</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-2">
-           <div className="flex flex-wrap items-end gap-3 bg-secondary/20 p-3 rounded-lg border border-border/50">
-             <div className="space-y-1 min-w-[100px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Tipo</span>
-               <select className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background/50 px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50" value={type} onChange={e => setType(e.target.value)}>
-                 <option value="buy">Compra</option>
-                 <option value="sell">Venda</option>
-               </select>
-             </div>
-             <div className="space-y-1 min-w-[120px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Data</span>
-               <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 bg-background/50" />
-             </div>
-             <div className="space-y-1 min-w-[80px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
-               <Input type="number" step="any" value={qty} onChange={e => setQty(e.target.value)} className="h-9 bg-background/50" />
-             </div>
-             <div className="space-y-1 min-w-[90px] flex-1">
-               <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un. {asset.priceCurrency === 'USD' ? '(US$)' : '(R$)'}</span>
-               <Input type="number" step="any" placeholder={asset.priceCurrency === 'USD' ? "Ex: 15.00" : "Ex: 25.50"} value={price} onChange={e => setPrice(e.target.value)} className="h-9 bg-background/50" />
-             </div>
-             <Button onClick={handleAdd} className="h-9 px-4 w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" /> Lançar</Button>
-           </div>
-           
-           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-             {transactions.sort((a:any,b:any)=>new Date(b.date).getTime() - new Date(a.date).getTime()).map((t:any) => (
-               <div key={t.id} className="flex items-center justify-between bg-secondary/50 rounded-lg p-3 text-sm border border-border/50">
-                 <div className="flex flex-1 items-center gap-4">
-                   <div className={`flex items-center justify-center w-6 h-6 rounded-full ${t.type === 'buy' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                     {t.type === 'buy' ? 'C' : 'V'}
-                   </div>
-                   <span className="w-24 text-muted-foreground">{new Date(t.date).toLocaleDateString()}</span>
-                   <span className="w-20 font-medium text-right">{t.quantity} un</span>
-                   <span className="w-24 font-mono text-right flex flex-col items-end">
-                     {t.price.toFixed(2)}
-                   </span>
-                 </div>
-                 <button onClick={() => removeTransaction(t.id, asset.id)} className="text-muted-foreground hover:text-destructive transiton-colors ml-4 p-1">
-                   <Trash2 className="w-4 h-4" />
-                 </button>
-               </div>
-             ))}
-             {transactions.length === 0 && <p className="text-xs text-center text-muted-foreground pt-4 pb-2">Nenhuma transação registrada. Mantenha seu histórico atualizado.</p>}
-           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}

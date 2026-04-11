@@ -4,7 +4,6 @@ import { MacroAllocation } from '@/components/MacroAllocation';
 import { AssetManager } from '@/components/AssetManager';
 import { NextInvestment } from '@/components/NextInvestment';
 import { PortfolioOverview } from '@/components/PortfolioOverview';
-import { ComparativeAnalysis } from '@/components/ComparativeAnalysis';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PaletteSelector } from '@/components/PaletteSelector';
 import { useAuth } from '@/context/AuthContext';
@@ -53,7 +52,6 @@ const Index = () => {
             <div className="flex justify-center">
               <TabsList className="flex flex-wrap h-auto w-full max-w-[800px] justify-center gap-1 p-1">
                 <TabsTrigger value="visao-geral" className="flex-1 min-w-[120px]">Visão Geral</TabsTrigger>
-                <TabsTrigger value="analise" className="flex-1 min-w-[120px]">Análise</TabsTrigger>
                 <TabsTrigger value="meus-ativos" className="flex-1 min-w-[120px]">Meus Ativos</TabsTrigger>
                 <TabsTrigger value="objetivos" className="flex-1 min-w-[120px]">Objetivos</TabsTrigger>
               </TabsList>
@@ -63,12 +61,6 @@ const Index = () => {
               <div className="max-w-4xl mx-auto space-y-6">
                 <NextInvestment />
                 <PortfolioOverview />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="analise" className="animate-in fade-in-50 duration-500">
-              <div className="max-w-5xl mx-auto">
-                <ComparativeAnalysis />
               </div>
             </TabsContent>
 
