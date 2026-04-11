@@ -30,7 +30,8 @@ export function CurrencySelector() {
   );
 }
 
-export function formatCurrency(value: number, currency: Currency): string {
+export function formatCurrency(value: number, currency: Currency, hidden?: boolean): string {
+  if (hidden) return '••••••';
   const formatter = new Intl.NumberFormat(
     currency === 'BRL' ? 'pt-BR' : currency === 'EUR' ? 'de-DE' : 'en-US',
     { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }

@@ -7,7 +7,7 @@ import { PortfolioOverview } from '@/components/PortfolioOverview';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PaletteSelector } from '@/components/PaletteSelector';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut } from 'lucide-react';
+import { LogOut, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
