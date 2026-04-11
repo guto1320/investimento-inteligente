@@ -66,6 +66,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [exchangeRates, setExchangeRates] = useState({ USD_BRL: 5.2, EUR_BRL: 5.7, USD_EUR: 0.92 });
   const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [valuesHidden, setValuesHidden] = useState(true);
 
   // Fetch exchange rates
   useEffect(() => {
