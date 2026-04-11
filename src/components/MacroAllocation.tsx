@@ -2,7 +2,7 @@ import { usePortfolio } from '@/context/PortfolioContext';
 import { Slider } from '@/components/ui/slider';
 import { MACRO_CATEGORIES, CATEGORY_LABELS, AssetCategory } from '@/types/portfolio';
 import { formatCurrency } from './CurrencySelector';
-import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Bitcoin } from 'lucide-react';
+import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
@@ -69,7 +69,7 @@ export function MacroAllocation() {
         </div>
         <div className="flex-1 bg-secondary/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 mb-1">
-            <Bitcoin className="w-3.5 h-3.5" style={{ color: '#F7931A' }} />
+            <Coins className="w-3.5 h-3.5" style={{ color: '#F7931A' }} />
             <span className="text-xs font-medium text-muted-foreground">Cripto (objetivo)</span>
           </div>
           <p className="text-lg font-bold" style={{ color: '#F7931A' }}>{macroTargets.cripto}%</p>
@@ -81,7 +81,7 @@ export function MacroAllocation() {
         {(['brasil', 'exterior', 'cripto'] as const).map(macro => (
           <div key={macro} className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {macro === 'brasil' ? '🇧🇷 Brasil' : macro === 'exterior' ? '🌎 Exterior' : '₿ Criptoativos'}
+              {macro === 'brasil' ? '🇧🇷 Brasil' : macro === 'exterior' ? '🌎 Exterior' : '🪙 Criptoativos'}
             </p>
             {MACRO_CATEGORIES[macro].map(cat => {
               const catValue = getCategoryValue(cat);

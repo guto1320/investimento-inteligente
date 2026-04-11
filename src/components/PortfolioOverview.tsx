@@ -64,7 +64,7 @@ export function PortfolioOverview() {
           </div>
         </div>
         <div className="flex-1 bg-secondary/50 rounded-lg p-3">
-          <p className="text-xs text-muted-foreground">₿ Cripto</p>
+          <p className="text-xs text-muted-foreground">🪙 Cripto</p>
           <p className="text-lg font-bold">{formatCurrency(criptoValue, currency, valuesHidden)}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className={`text-xs font-medium ${Math.abs(criptoPct - macroTargets.cripto) > 3 ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>

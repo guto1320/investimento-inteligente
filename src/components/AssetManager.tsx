@@ -36,10 +36,10 @@ export function AssetManager() {
         </div>
       </div>
 
-      {(['brasil', 'exterior'] as const).map(macro => (
+      {(['brasil', 'exterior', 'cripto'] as const).map(macro => (
         <div key={macro} className="space-y-3">
           <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            {macro === 'brasil' ? '🇧🇷 Brasil' : '🌎 Exterior'}
+            {macro === 'brasil' ? '🇧🇷 Brasil' : macro === 'exterior' ? '🌎 Exterior' : '🪙 Criptoativos'}
           </h3>
 
           {MACRO_CATEGORIES[macro].map(cat => {
