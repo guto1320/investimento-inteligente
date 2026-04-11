@@ -5,7 +5,7 @@ import { formatCurrency } from './CurrencySelector';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Scale, RefreshCw, Loader2, History } from 'lucide-react';
+import { Plus, Trash2, Scale, RefreshCw, Loader2, History, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ImportAssets } from './ImportAssets';
 
@@ -218,6 +218,9 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const catValue = getCategoryValue();
+  const totalWeight = assets.reduce((sum, a) => sum + (a.targetWeight || 0), 0);
+  const isWeightValid = Math.abs(100 - totalWeight) < 0.1;
+  const weightDiff = 100 - totalWeight;
 
   const handleAdd = () => {
     if (!newTicker || !newQty) return;
@@ -260,11 +263,33 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
       {isOpen && (
         <div className="border-t border-border p-4 space-y-3">
           {assets.length > 0 && (
-            <div className="flex justify-end">
-              <Button variant="ghost" size="sm" onClick={onDistributeEqually} className="gap-1.5 text-xs">
-                <Scale className="w-3.5 h-3.5" />
-                Distribuir igualmente
-              </Button>
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={onDistributeEqually} className="gap-1.5 text-xs">
+                  <Scale className="w-3.5 h-3.5" />
+                  Distribuir igualmente
+                </Button>
+              </div>
+              
+              <div className={`flex items-center gap-2 rounded-lg p-2 text-xs font-medium ${
+                isWeightValid
+                  ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                  : 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400'
+              }`}>
+                {isWeightValid ? (
+                  <>
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Soma das metas atingiu 100%</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>
+                      Soma das metas: {totalWeight.toFixed(1)}% — {weightDiff > 0 ? `faltam ${weightDiff.toFixed(1)}%` : `excede em ${Math.abs(weightDiff).toFixed(1)}%`}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
