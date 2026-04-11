@@ -32,6 +32,8 @@ interface PortfolioState {
   getMacroFromTargets: () => { brasil: number; exterior: number };
   isLoadingPrices: boolean;
   isLoading: boolean;
+  valuesHidden: boolean;
+  setValuesHidden: (v: boolean) => void;
 }
 
 export interface InvestmentSuggestion {
