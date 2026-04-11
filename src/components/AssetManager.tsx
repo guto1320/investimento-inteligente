@@ -8,6 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Scale, RefreshCw, Loader2 } from 'lucide-react';
 import { ImportAssets } from './ImportAssets';
 
+const FIXED_INCOME_CATEGORIES: AssetCategory[] = ['br_renda_fixa', 'ext_renda_fixa'];
+
+function isFixedIncome(cat: AssetCategory) {
+  return FIXED_INCOME_CATEGORIES.includes(cat);
+}
+
 export function AssetManager() {
   const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices, valuesHidden } = usePortfolio();
 
@@ -36,36 +42,154 @@ export function AssetManager() {
             {macro === 'brasil' ? '🇧🇷 Brasil' : '🌎 Exterior'}
           </h3>
 
-          {MACRO_CATEGORIES[macro].map(cat => (
-            <CategoryBlock
-              key={cat}
-              category={cat}
-              assets={assets.filter(a => a.category === cat)}
-              displayCurrency={currency}
-              onAdd={(ticker, qty) => addAsset({
-                ticker: ticker.toUpperCase(),
-                quantity: qty,
-                currentPrice: 0,
-                priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
-                targetWeight: 0,
-                category: cat,
-              })}
-              onRemove={removeAsset}
-              onUpdateQuantity={(id, qty) => updateAsset(id, { quantity: qty })}
-              onUpdateWeight={updateAssetWeight}
-              onDistributeEqually={() => distributeEqually(cat)}
-              getValueInCurrency={getValueInCurrency}
-              getCategoryValue={() => getCategoryValue(cat)}
-              isLoadingPrices={isLoadingPrices}
-              valuesHidden={valuesHidden}
-            />
-          ))}
+          {MACRO_CATEGORIES[macro].map(cat => {
+            if (isFixedIncome(cat)) {
+              return (
+                <FixedIncomeBlock
+                  key={cat}
+                  category={cat}
+                  asset={assets.find(a => a.category === cat)}
+                  displayCurrency={currency}
+                  priceCurrency={macro === 'brasil' ? 'BRL' : 'USD'}
+                  onSet={(value) => {
+                    const existing = assets.find(a => a.category === cat);
+                    if (existing) {
+                      updateAsset(existing.id, { currentPrice: value, quantity: 1 });
+                    } else {
+                      addAsset({
+                        ticker: cat === 'br_renda_fixa' ? 'RENDA FIXA BR' : 'RENDA FIXA EXT',
+                        quantity: 1,
+                        currentPrice: value,
+                        priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
+                        targetWeight: 100,
+                        category: cat,
+                      });
+                    }
+                  }}
+                  onRemove={existing => {
+                    if (existing) removeAsset(existing.id);
+                  }}
+                  getValueInCurrency={getValueInCurrency}
+                  valuesHidden={valuesHidden}
+                />
+              );
+            }
+
+            return (
+              <CategoryBlock
+                key={cat}
+                category={cat}
+                assets={assets.filter(a => a.category === cat)}
+                displayCurrency={currency}
+                onAdd={(ticker, qty) => addAsset({
+                  ticker: ticker.toUpperCase(),
+                  quantity: qty,
+                  currentPrice: 0,
+                  priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
+                  targetWeight: 0,
+                  category: cat,
+                })}
+                onRemove={removeAsset}
+                onUpdateQuantity={(id, qty) => updateAsset(id, { quantity: qty })}
+                onUpdateWeight={updateAssetWeight}
+                onDistributeEqually={() => distributeEqually(cat)}
+                getValueInCurrency={getValueInCurrency}
+                getCategoryValue={() => getCategoryValue(cat)}
+                isLoadingPrices={isLoadingPrices}
+                valuesHidden={valuesHidden}
+              />
+            );
+          })}
         </div>
       ))}
     </div>
   );
 }
 
+/* ── Fixed Income Block ── */
+function FixedIncomeBlock({ category, asset, displayCurrency, priceCurrency, onSet, onRemove, getValueInCurrency, valuesHidden }: {
+  category: AssetCategory;
+  asset: any | undefined;
+  displayCurrency: Currency;
+  priceCurrency: Currency;
+  onSet: (value: number) => void;
+  onRemove: (asset: any) => void;
+  getValueInCurrency: (value: number, from: Currency) => number;
+  valuesHidden: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+
+  const currentValue = asset ? getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency) : 0;
+
+  const handleSave = () => {
+    const val = parseFloat(inputValue.replace(',', '.'));
+    if (val > 0) {
+      onSet(val);
+      setInputValue('');
+    }
+  };
+
+  return (
+    <div className="glass-card overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="font-medium text-sm">{CATEGORY_LABELS[category]}</span>
+          {asset && (
+            <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">
+              valor definido
+            </span>
+          )}
+        </div>
+        <span className="text-sm font-semibold text-primary">
+          {formatCurrency(currentValue, displayCurrency, valuesHidden)}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-border p-4 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Informe o valor total investido em renda fixa ({priceCurrency}).
+          </p>
+
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              inputMode="decimal"
+              placeholder={`Valor total (${priceCurrency})`}
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              className="h-8 text-xs flex-1"
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+            />
+            <Button size="sm" onClick={handleSave} className="h-8 px-3">
+              Salvar
+            </Button>
+          </div>
+
+          {asset && (
+            <div className="flex items-center justify-between bg-secondary/30 rounded-lg p-3">
+              <span className="text-sm text-foreground">
+                Valor atual: <strong>{formatCurrency(asset.currentPrice, priceCurrency, valuesHidden)}</strong>
+              </span>
+              <button
+                onClick={() => onRemove(asset)}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Standard Category Block ── */
 function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices, valuesHidden }: {
   category: AssetCategory;
   assets: any[];
@@ -124,7 +248,6 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
           {assets.map(asset => {
             const assetValue = getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency);
             const pct = catValue > 0 ? (assetValue / catValue) * 100 : 0;
-            const priceLoading = asset.currentPrice === 0 && isLoadingPrices;
 
             return (
               <div key={asset.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
