@@ -14,6 +14,33 @@ function isFixedIncome(cat: AssetCategory) {
   return FIXED_INCOME_CATEGORIES.includes(cat);
 }
 
+function calculateAveragePrice(txs: any[]) {
+  if (!txs || txs.length === 0) return 0;
+  
+  const sortedTxs = [...txs].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  let totalQty = 0;
+  let totalCost = 0;
+  
+  for (const t of sortedTxs) {
+    if (t.type === 'buy') {
+      totalCost += (t.price * t.quantity);
+      totalQty += t.quantity;
+    } else if (t.type === 'sell') {
+      if (totalQty > 0) {
+        const avgPrice = totalCost / totalQty;
+        totalQty -= t.quantity;
+        totalCost -= (t.quantity * avgPrice);
+      }
+      if (totalQty <= 0) {
+        totalQty = 0;
+        totalCost = 0;
+      }
+    }
+  }
+  
+  return totalQty > 0 ? (totalCost / totalQty) : 0;
+}
+
 export function AssetManager() {
   const { assets, addAsset, removeAsset, updateAsset, updateAssetWeight, distributeEqually, getCategoryValue, getValueInCurrency, currency, refreshPrices, isLoadingPrices, valuesHidden } = usePortfolio();
 
@@ -281,21 +308,35 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
           {assets.map(asset => {
             const assetValue = getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency);
             const pct = catValue > 0 ? (assetValue / catValue) * 100 : 0;
+            
+            const assetTxs = transactions.filter(t => t.assetId === asset.id);
+            const avgPrice = calculateAveragePrice(assetTxs);
+            let profitability = 0;
+            if (avgPrice > 0 && asset.currentPrice > 0) {
+              profitability = ((asset.currentPrice / avgPrice) - 1) * 100;
+            }
 
             return (
               <div key={asset.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                     <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {asset.quantity} un × {asset.currentPrice > 0
-                        ? formatCurrency(asset.currentPrice, asset.priceCurrency, valuesHidden)
-                        : <span className="inline-flex items-center gap-1 text-warning">
-                            {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                            buscando...
-                          </span>
-                      }
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {asset.quantity} un × {asset.currentPrice > 0
+                          ? formatCurrency(asset.currentPrice, asset.priceCurrency, valuesHidden)
+                          : <span className="inline-flex items-center gap-1 text-warning">
+                              {isLoadingPrices ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                              buscando...
+                            </span>
+                        }
+                      </span>
+                      {asset.currentPrice > 0 && avgPrice > 0 && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm font-medium ${profitability >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                          {profitability > 0 ? '+' : ''}{profitability.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">
