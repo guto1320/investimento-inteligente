@@ -16,7 +16,7 @@ interface PortfolioState {
   setCategoryTarget: (cat: AssetCategory, pct: number) => void;
   setCategoryTargets: (targets: CategoryTarget) => void;
   assets: Asset[];
-  addAsset: (asset: Omit<Asset, 'id'> & { initialDate?: string }) => void;
+  addAsset: (asset: Omit<Asset, 'id'> & { initialDate?: string; initialExchangeRate?: number; initialOperationalCosts?: number }) => void;
   removeAsset: (id: string) => void;
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   updateAssetWeight: (id: string, weight: number) => void;
@@ -251,7 +251,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     } catch { return null; }
   }, []);
 
-  const addAsset = useCallback(async (asset: Omit<Asset, 'id'> & { initialDate?: string }) => {
+  const addAsset = useCallback(async (asset: Omit<Asset, 'id'> & { initialDate?: string; initialExchangeRate?: number; initialOperationalCosts?: number }) => {
     if (!userId) return;
     const id = crypto.randomUUID();
     const newAsset = { ...asset, id };
@@ -276,7 +276,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         type: 'buy',
         date: asset.initialDate || new Date().toISOString(),
         quantity: asset.quantity,
-        price: asset.currentPrice
+        price: asset.currentPrice,
+        exchangeRate: asset.initialExchangeRate,
+        operationalCosts: asset.initialOperationalCosts
       };
       setTransactions(prev => [...prev, tx]);
       await supabase.from('portfolio_transactions').insert({
@@ -286,7 +288,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         type: 'buy',
         date: tx.date,
         quantity: tx.quantity,
-        price: tx.price
+        price: tx.price,
+        exchange_rate: tx.exchangeRate || null,
+        operational_costs: tx.operationalCosts || null
       });
     }
 

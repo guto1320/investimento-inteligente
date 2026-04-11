@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Scale, RefreshCw, Loader2, History } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ImportAssets } from './ImportAssets';
 
 const FIXED_INCOME_CATEGORIES: AssetCategory[] = ['br_renda_fixa', 'ext_renda_fixa'];
 
@@ -23,7 +22,6 @@ export function AssetManager() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-lg font-semibold">Meus Ativos</h2>
         <div className="flex items-center gap-2">
-          <ImportAssets />
           <Button
             variant="outline"
             size="sm"
@@ -82,7 +80,8 @@ export function AssetManager() {
                 category={cat}
                 assets={assets.filter(a => a.category === cat)}
                 displayCurrency={currency}
-                onAdd={(ticker, qty, price, initialDate) => {
+                isForeign={macro !== 'brasil'}
+                onAdd={(ticker, qty, price, initialDate, exchange, costs) => {
                   let finalTicker = ticker.toUpperCase();
                   if (cat === 'cripto_ativos' && !finalTicker.includes('-')) {
                     finalTicker = `${finalTicker}-USD`;
@@ -95,6 +94,8 @@ export function AssetManager() {
                     targetWeight: 0,
                     category: cat,
                     initialDate: initialDate || undefined,
+                    initialExchangeRate: exchange,
+                    initialOperationalCosts: costs,
                   });
                 }}
                 onRemove={removeAsset}
@@ -197,12 +198,12 @@ function FixedIncomeBlock({ category, asset, displayCurrency, priceCurrency, onS
   );
 }
 
-/* ── Standard Category Block ── */
-function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices, valuesHidden }: {
+function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, onRemove, onUpdateQuantity, onUpdateWeight, onDistributeEqually, getValueInCurrency, getCategoryValue, isLoadingPrices, valuesHidden }: {
   category: AssetCategory;
   assets: any[];
   displayCurrency: Currency;
-  onAdd: (ticker: string, qty: number, price?: number, date?: string) => void;
+  isForeign?: boolean;
+  onAdd: (ticker: string, qty: number, price?: number, date?: string, exchange?: number, costs?: number) => void;
   onRemove: (id: string) => void;
   onUpdateQuantity: (id: string, qty: number) => void;
   onUpdateWeight: (id: string, weight: number) => void;
@@ -216,18 +217,24 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
   const [newTicker, setNewTicker] = useState('');
   const [newQty, setNewQty] = useState('');
   const [newPrice, setNewPrice] = useState('');
+  const [newExchange, setNewExchange] = useState('');
+  const [newCosts, setNewCosts] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const catValue = getCategoryValue();
 
   const handleAdd = () => {
     if (!newTicker || !newQty || !newPrice) return;
-    onAdd(newTicker, parseFloat(newQty), parseFloat(newPrice), newDate);
+    onAdd(newTicker, parseFloat(newQty), parseFloat(newPrice), newDate, newExchange ? parseFloat(newExchange) : undefined, newCosts ? parseFloat(newCosts) : undefined);
     setNewTicker('');
     setNewQty('');
     setNewPrice('');
+    setNewExchange('');
+    setNewCosts('');
     setNewDate(new Date().toISOString().split('T')[0]);
+    setIsAddOpen(false);
   };
 
   const getPlaceholder = () => {
@@ -329,44 +336,51 @@ function CategoryBlock({ category, assets, displayCurrency, onAdd, onRemove, onU
             );
           })}
 
-          <div className="flex flex-wrap gap-2 pt-2 items-center">
-            <Input
-              placeholder={getPlaceholder()}
-              value={newTicker}
-              onChange={e => setNewTicker(e.target.value)}
-              className="h-8 text-[11px] min-w-[120px] flex-1"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            />
-            <div className="flex gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
-              <Input
-                type="number"
-                step="any"
-                placeholder="Qtd (un)"
-                value={newQty}
-                onChange={e => setNewQty(e.target.value)}
-                className="h-8 text-[11px] w-full sm:w-20"
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              />
-              <Input
-                type="number"
-                step="any"
-                placeholder="Preço (R$)"
-                value={newPrice}
-                onChange={e => setNewPrice(e.target.value)}
-                className="h-8 text-[11px] w-full sm:w-20"
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              />
-              <Input
-                type="date"
-                value={newDate}
-                onChange={e => setNewDate(e.target.value)}
-                className="h-8 text-[11px] w-full sm:w-32"
-                onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              />
-              <Button size="sm" onClick={handleAdd} className="h-8 px-3 w-full sm:w-auto">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="pt-2">
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full text-xs h-9 border-dashed text-muted-foreground hover:text-foreground">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Cadastrar Primeira Transação (Obter {CATEGORY_LABELS[category]})
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md w-[95vw]">
+                <DialogHeader>
+                  <DialogTitle>Novo Ativo: {CATEGORY_LABELS[category]}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase font-semibold text-muted-foreground">Ticker</span>
+                    <Input placeholder={getPlaceholder()} value={newTicker} onChange={e => setNewTicker(e.target.value)} className="h-9" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Data da Compra</span>
+                      <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Preço Un.</span>
+                      <Input type="number" step="any" placeholder="Preço (R$)" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Qtd</span>
+                      <Input type="number" step="any" placeholder="Quantidade" value={newQty} onChange={e => setNewQty(e.target.value)} className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] uppercase font-semibold text-muted-foreground">Custos</span>
+                      <Input type="number" step="any" placeholder="Corretagem" value={newCosts} onChange={e => setNewCosts(e.target.value)} className="h-9" />
+                    </div>
+                    {isForeign && (
+                      <div className="space-y-1 col-span-2">
+                        <span className="text-[10px] uppercase font-semibold text-muted-foreground">Câmbio</span>
+                        <Input type="number" step="any" placeholder="Ex: 5.10" value={newExchange} onChange={e => setNewExchange(e.target.value)} className="h-9" />
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={handleAdd} className="w-full">Cadastrar Ativo</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       )}
