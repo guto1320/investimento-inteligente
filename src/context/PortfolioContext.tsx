@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Asset, AssetCategory, Currency, MacroAllocation, MacroCategory, MACRO_CATEGORIES, CATEGORY_LABELS, Transaction } from '@/types/portfolio';
+import { Asset, AssetCategory, Currency, MacroAllocation, MacroCategory, MACRO_CATEGORIES, CATEGORY_LABELS } from '@/types/portfolio';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
@@ -21,7 +21,6 @@ interface PortfolioState {
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   updateAssetWeight: (id: string, weight: number) => void;
   distributeEqually: (category: AssetCategory) => void;
-  distributeEqually: (category: AssetCategory) => void;
   exchangeRates: { USD_BRL: number; EUR_BRL: number; USD_EUR: number };
   getValueInCurrency: (value: number, from: Currency) => number;
   getTotalValue: () => number;
@@ -30,7 +29,7 @@ interface PortfolioState {
   refreshPrices: () => Promise<void>;
   syncTargetsToActual: () => void;
   getTotalTargets: () => number;
-  getMacroFromTargets: () => { brasil: number; exterior: number };
+  getMacroFromTargets: () => { brasil: number; exterior: number; cripto: number };
   isLoadingPrices: boolean;
   isLoading: boolean;
   valuesHidden: boolean;
