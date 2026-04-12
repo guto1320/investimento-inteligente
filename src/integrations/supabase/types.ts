@@ -55,40 +55,40 @@ export type Database = {
       }
       portfolio_transactions: {
         Row: {
-          id: string
           asset_id: string
-          user_id: string
-          type: string
-          date: string
-          quantity: number
-          price: number
-          exchange_rate: number | null
-          operational_costs: number | null
           created_at: string
+          date: string
+          exchange_rate: number | null
+          id: string
+          operational_costs: number | null
+          price: number
+          quantity: number
+          type: string
+          user_id: string
         }
         Insert: {
-          id?: string
           asset_id: string
-          user_id: string
-          type: string
-          date: string
-          quantity: number
-          price: number
-          exchange_rate?: number | null
-          operational_costs?: number | null
           created_at?: string
+          date: string
+          exchange_rate?: number | null
+          id?: string
+          operational_costs?: number | null
+          price: number
+          quantity: number
+          type: string
+          user_id: string
         }
         Update: {
-          id?: string
           asset_id?: string
-          user_id?: string
-          type?: string
-          date?: string
-          quantity?: number
-          price?: number
-          exchange_rate?: number | null
-          operational_costs?: number | null
           created_at?: string
+          date?: string
+          exchange_rate?: number | null
+          id?: string
+          operational_costs?: number | null
+          price?: number
+          quantity?: number
+          type?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -97,7 +97,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "portfolio_assets"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       portfolios: {
@@ -107,8 +107,8 @@ export type Database = {
           currency: string
           id: string
           macro_brasil: number
-          macro_exterior: number
           macro_cripto: number
+          macro_exterior: number
           updated_at: string
           user_id: string
         }
@@ -118,8 +118,8 @@ export type Database = {
           currency?: string
           id?: string
           macro_brasil?: number
-          macro_exterior?: number
           macro_cripto?: number
+          macro_exterior?: number
           updated_at?: string
           user_id: string
         }
@@ -129,8 +129,8 @@ export type Database = {
           currency?: string
           id?: string
           macro_brasil?: number
-          macro_exterior?: number
           macro_cripto?: number
+          macro_exterior?: number
           updated_at?: string
           user_id?: string
         }

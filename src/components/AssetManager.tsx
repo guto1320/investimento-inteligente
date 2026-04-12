@@ -50,27 +50,23 @@ export function AssetManager() {
                 <FixedIncomeBlock
                   key={cat}
                   category={cat}
-                  asset={assets.find(a => a.category === cat)}
+                  assets={assets.filter(a => a.category === cat)}
                   displayCurrency={currency}
                   priceCurrency={macro === 'brasil' ? 'BRL' : 'USD'}
-                  onSet={(value) => {
-                    const existing = assets.find(a => a.category === cat);
-                    if (existing) {
-                      updateAsset(existing.id, { currentPrice: value, quantity: 1 });
-                    } else {
-                      addAsset({
-                        ticker: cat === 'br_renda_fixa' ? 'RENDA FIXA BR' : 'RENDA FIXA EXT',
-                        quantity: 1,
-                        currentPrice: value,
-                        priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
-                        targetWeight: 100,
-                        category: cat,
-                      });
-                    }
+                  onAdd={(name, value) => {
+                    addAsset({
+                      ticker: name.toUpperCase(),
+                      quantity: 1,
+                      currentPrice: value,
+                      priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
+                      targetWeight: 0,
+                      category: cat,
+                    });
                   }}
-                  onRemove={existing => {
-                    if (existing) removeAsset(existing.id);
+                  onUpdateValue={(id, value) => {
+                    updateAsset(id, { currentPrice: value });
                   }}
+                  onRemove={removeAsset}
                   getValueInCurrency={getValueInCurrency}
                   valuesHidden={valuesHidden}
                 />
@@ -115,27 +111,38 @@ export function AssetManager() {
 }
 
 /* ── Fixed Income Block ── */
-function FixedIncomeBlock({ category, asset, displayCurrency, priceCurrency, onSet, onRemove, getValueInCurrency, valuesHidden }: {
+function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, onAdd, onUpdateValue, onRemove, getValueInCurrency, valuesHidden }: {
   category: AssetCategory;
-  asset: any | undefined;
+  assets: any[];
   displayCurrency: Currency;
   priceCurrency: Currency;
-  onSet: (value: number) => void;
-  onRemove: (asset: any) => void;
+  onAdd: (name: string, value: number) => void;
+  onUpdateValue: (id: string, value: number) => void;
+  onRemove: (id: string) => void;
   getValueInCurrency: (value: number, from: Currency) => number;
   valuesHidden: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
-  const currentValue = asset ? getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency) : 0;
+  const totalValue = assets.reduce((sum, a) => sum + getValueInCurrency(a.currentPrice * a.quantity, a.priceCurrency), 0);
 
-  const handleSave = () => {
-    const val = parseFloat(inputValue.replace(',', '.'));
-    if (val > 0) {
-      onSet(val);
-      setInputValue('');
-    }
+  const handleAdd = () => {
+    const val = parseFloat(newValue.replace(',', '.'));
+    if (!newName.trim() || !(val > 0)) return;
+    onAdd(newName.trim(), val);
+    setNewName('');
+    setNewValue('');
+  };
+
+  const handleEditSave = (id: string) => {
+    const val = parseFloat(editValue.replace(',', '.'));
+    if (val > 0) onUpdateValue(id, val);
+    setEditingId(null);
+    setEditValue('');
   };
 
   return (
@@ -146,51 +153,79 @@ function FixedIncomeBlock({ category, asset, displayCurrency, priceCurrency, onS
       >
         <div className="flex items-center gap-3">
           <span className="font-medium text-sm">{CATEGORY_LABELS[category]}</span>
-          {asset && (
-            <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">
-              valor definido
-            </span>
-          )}
+          <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">
+            {assets.length} {assets.length === 1 ? 'item' : 'itens'}
+          </span>
         </div>
         <span className="text-sm font-semibold text-primary">
-          {formatCurrency(currentValue, displayCurrency, valuesHidden)}
+          {formatCurrency(totalValue, displayCurrency, valuesHidden)}
         </span>
       </button>
 
       {isOpen && (
         <div className="border-t border-border p-4 space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Informe o valor total investido em renda fixa ({priceCurrency}).
-          </p>
-
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              inputMode="decimal"
-              placeholder={`Valor total (${priceCurrency})`}
-              value={inputValue}
-              onChange={e => setInputValue(e.target.value)}
-              className="h-8 text-xs flex-1"
-              onKeyDown={e => e.key === 'Enter' && handleSave()}
-            />
-            <Button size="sm" onClick={handleSave} className="h-8 px-3">
-              Salvar
-            </Button>
-          </div>
-
-          {asset && (
-            <div className="flex items-center justify-between bg-secondary/30 rounded-lg p-3">
-              <span className="text-sm text-foreground">
-                Valor atual: <strong>{formatCurrency(asset.currentPrice, priceCurrency, valuesHidden)}</strong>
-              </span>
+          {/* Existing entries */}
+          {assets.map(asset => (
+            <div key={asset.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-3">
+              <div className="flex-1">
+                <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
+                {editingId === asset.id ? (
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="h-7 text-xs w-32"
+                      onKeyDown={e => e.key === 'Enter' && handleEditSave(asset.id)}
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={() => handleEditSave(asset.id)} className="h-7 px-2 text-xs">OK</Button>
+                  </div>
+                ) : (
+                  <p
+                    className="text-sm text-foreground mt-0.5 cursor-pointer hover:underline"
+                    onClick={() => { setEditingId(asset.id); setEditValue(String(asset.currentPrice)); }}
+                  >
+                    {formatCurrency(asset.currentPrice, priceCurrency, valuesHidden)}
+                  </p>
+                )}
+              </div>
               <button
-                onClick={() => onRemove(asset)}
-                className="text-muted-foreground hover:text-destructive transition-colors"
+                onClick={() => onRemove(asset.id)}
+                className="text-muted-foreground hover:text-destructive transition-colors ml-2"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-          )}
+          ))}
+
+          {/* Add new entry */}
+          <p className="text-xs text-muted-foreground">
+            Adicione itens de renda fixa (ex: CDB, LCI, Tesouro Selic).
+          </p>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Nome (ex: CDB Banco X)"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="h-8 text-xs flex-1"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <Input
+              type="text"
+              inputMode="decimal"
+              placeholder={`Valor (${priceCurrency})`}
+              value={newValue}
+              onChange={e => setNewValue(e.target.value)}
+              className="h-8 text-xs w-32"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <Button size="sm" onClick={handleAdd} className="h-8 px-3">
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>
