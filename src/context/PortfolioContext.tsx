@@ -286,7 +286,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     const catAssets = assets.filter(a => a.category === category);
     if (catAssets.length === 0) return;
     const weight = Math.round((100 / catAssets.length) * 10) / 10;
-    catAssets.forEach(a => updateAssetWeight(a.id, weight));
+    const totalAssigned = weight * (catAssets.length - 1);
+    const lastWeight = Math.round((100 - totalAssigned) * 10) / 10;
+    catAssets.forEach((a, i) => updateAssetWeight(a.id, i === catAssets.length - 1 ? lastWeight : weight));
   }, [assets, updateAssetWeight]);
 
 

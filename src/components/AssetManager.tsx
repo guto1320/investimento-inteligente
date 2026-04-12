@@ -254,7 +254,7 @@ function CategoryBlock({ category, assets, displayCurrency, isForeign, onAdd, on
 
   const catValue = getCategoryValue();
   const totalWeight = assets.reduce((sum, a) => sum + (a.targetWeight || 0), 0);
-  const isWeightValid = Math.abs(100 - totalWeight) <= 0.2;
+  const isWeightValid = Math.abs(100 - totalWeight) <= 1;
   const weightDiff = 100 - totalWeight;
 
   const handleAdd = () => {
