@@ -50,27 +50,23 @@ export function AssetManager() {
                 <FixedIncomeBlock
                   key={cat}
                   category={cat}
-                  asset={assets.find(a => a.category === cat)}
+                  assets={assets.filter(a => a.category === cat)}
                   displayCurrency={currency}
                   priceCurrency={macro === 'brasil' ? 'BRL' : 'USD'}
-                  onSet={(value) => {
-                    const existing = assets.find(a => a.category === cat);
-                    if (existing) {
-                      updateAsset(existing.id, { currentPrice: value, quantity: 1 });
-                    } else {
-                      addAsset({
-                        ticker: cat === 'br_renda_fixa' ? 'RENDA FIXA BR' : 'RENDA FIXA EXT',
-                        quantity: 1,
-                        currentPrice: value,
-                        priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
-                        targetWeight: 100,
-                        category: cat,
-                      });
-                    }
+                  onAdd={(name, value) => {
+                    addAsset({
+                      ticker: name.toUpperCase(),
+                      quantity: 1,
+                      currentPrice: value,
+                      priceCurrency: macro === 'brasil' ? 'BRL' : 'USD',
+                      targetWeight: 0,
+                      category: cat,
+                    });
                   }}
-                  onRemove={existing => {
-                    if (existing) removeAsset(existing.id);
+                  onUpdateValue={(id, value) => {
+                    updateAsset(id, { currentPrice: value });
                   }}
+                  onRemove={removeAsset}
                   getValueInCurrency={getValueInCurrency}
                   valuesHidden={valuesHidden}
                 />
