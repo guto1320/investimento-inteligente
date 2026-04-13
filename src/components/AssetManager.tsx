@@ -67,6 +67,8 @@ export function AssetManager() {
                     updateAsset(id, { currentPrice: value });
                   }}
                   onRemove={removeAsset}
+                  onUpdateWeight={updateAssetWeight}
+                  onDistributeEqually={() => distributeEqually(cat)}
                   getValueInCurrency={getValueInCurrency}
                   valuesHidden={valuesHidden}
                 />
