@@ -113,7 +113,7 @@ export function AssetManager() {
 }
 
 /* ── Fixed Income Block ── */
-function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, onAdd, onUpdateValue, onRemove, getValueInCurrency, valuesHidden }: {
+function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, onAdd, onUpdateValue, onRemove, onUpdateWeight, onDistributeEqually, getValueInCurrency, valuesHidden }: {
   category: AssetCategory;
   assets: any[];
   displayCurrency: Currency;
@@ -121,6 +121,8 @@ function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, on
   onAdd: (name: string, value: number) => void;
   onUpdateValue: (id: string, value: number) => void;
   onRemove: (id: string) => void;
+  onUpdateWeight: (id: string, weight: number) => void;
+  onDistributeEqually: () => void;
   getValueInCurrency: (value: number, from: Currency) => number;
   valuesHidden: boolean;
 }) {
@@ -131,6 +133,9 @@ function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, on
   const [editValue, setEditValue] = useState('');
 
   const totalValue = assets.reduce((sum, a) => sum + getValueInCurrency(a.currentPrice * a.quantity, a.priceCurrency), 0);
+  const totalWeight = assets.reduce((sum, a) => sum + (a.targetWeight || 0), 0);
+  const isWeightValid = Math.abs(100 - totalWeight) <= 1;
+  const weightDiff = 100 - totalWeight;
 
   const handleAdd = () => {
     const val = parseFloat(newValue.replace(',', '.'));
@@ -166,41 +171,93 @@ function FixedIncomeBlock({ category, assets, displayCurrency, priceCurrency, on
 
       {isOpen && (
         <div className="border-t border-border p-4 space-y-3">
-          {/* Existing entries */}
-          {assets.map(asset => (
-            <div key={asset.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-3">
-              <div className="flex-1">
-                <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
-                {editingId === asset.id ? (
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      className="h-7 text-xs w-32"
-                      onKeyDown={e => e.key === 'Enter' && handleEditSave(asset.id)}
-                      autoFocus
-                    />
-                    <Button size="sm" onClick={() => handleEditSave(asset.id)} className="h-7 px-2 text-xs">OK</Button>
-                  </div>
+          {assets.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={onDistributeEqually} className="gap-1.5 text-xs">
+                  <Scale className="w-3.5 h-3.5" />
+                  Distribuir igualmente
+                </Button>
+              </div>
+              
+              <div className={`flex items-center gap-2 rounded-lg p-2 text-xs font-medium ${
+                isWeightValid
+                  ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                  : 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400'
+              }`}>
+                {isWeightValid ? (
+                  <>
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Soma das metas atingiu 100%</span>
+                  </>
                 ) : (
-                  <p
-                    className="text-sm text-foreground mt-0.5 cursor-pointer hover:underline"
-                    onClick={() => { setEditingId(asset.id); setEditValue(String(asset.currentPrice)); }}
-                  >
-                    {formatCurrency(asset.currentPrice, priceCurrency, valuesHidden)}
-                  </p>
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>
+                      Soma das metas: {totalWeight.toFixed(1)}% — {weightDiff > 0 ? `faltam ${weightDiff.toFixed(1)}%` : `excede em ${Math.abs(weightDiff).toFixed(1)}%`}
+                    </span>
+                  </>
                 )}
               </div>
-              <button
-                onClick={() => onRemove(asset.id)}
-                className="text-muted-foreground hover:text-destructive transition-colors ml-2"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
-          ))}
+          )}
+
+          {assets.map(asset => {
+            const assetValue = getValueInCurrency(asset.currentPrice * asset.quantity, asset.priceCurrency);
+            const pct = totalValue > 0 ? (assetValue / totalValue) * 100 : 0;
+
+            return (
+              <div key={asset.id} className="bg-secondary/30 rounded-lg p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <span className="font-mono font-bold text-sm text-primary">{asset.ticker}</span>
+                    {editingId === asset.id ? (
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          className="h-7 text-xs w-32"
+                          onKeyDown={e => e.key === 'Enter' && handleEditSave(asset.id)}
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={() => handleEditSave(asset.id)} className="h-7 px-2 text-xs">OK</Button>
+                      </div>
+                    ) : (
+                      <p
+                        className="text-sm text-foreground mt-0.5 cursor-pointer hover:underline"
+                        onClick={() => { setEditingId(asset.id); setEditValue(String(asset.currentPrice)); }}
+                      >
+                        {formatCurrency(asset.currentPrice, priceCurrency, valuesHidden)}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onRemove(asset.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors ml-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Meta individual</span>
+                    <span className={`font-medium ${Math.abs(pct - asset.targetWeight) > 5 ? 'text-warning' : 'text-success'}`}>
+                      {pct.toFixed(1)}% / {asset.targetWeight.toFixed(1)}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[asset.targetWeight]}
+                    onValueChange={([v]) => onUpdateWeight(asset.id, v)}
+                    max={100}
+                    step={0.5}
+                  />
+                </div>
+              </div>
+            );
+          })}
 
           {/* Add new entry */}
           <p className="text-xs text-muted-foreground">
