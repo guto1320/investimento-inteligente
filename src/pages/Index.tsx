@@ -7,7 +7,7 @@ import { PortfolioOverview } from '@/components/PortfolioOverview';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PaletteSelector } from '@/components/PaletteSelector';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -36,6 +36,12 @@ const Index = () => {
           <div className="container max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground">Assistente de Aportes</h1>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild className="gap-1.5 text-muted-foreground">
+                <a href="https://view.gorila.com.br/" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4" />
+                  <span className="hidden sm:inline">Gorila</span>
+                </a>
+              </Button>
               <VisibilityToggle />
               <CurrencySelector />
               <PaletteSelector />
