@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { usePortfolio } from '@/context/PortfolioContext';
 import { Slider } from '@/components/ui/slider';
 import { MACRO_CATEGORIES, CATEGORY_LABELS, AssetCategory } from '@/types/portfolio';
 import { formatCurrency } from './CurrencySelector';
-import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Coins } from 'lucide-react';
+import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Coins, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
