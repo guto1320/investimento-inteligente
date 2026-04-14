@@ -7,7 +7,7 @@ import { Globe, MapPin, Target, AlertTriangle, CheckCircle, Coins, ChevronDown, 
 import { Button } from '@/components/ui/button';
 
 export function MacroAllocation() {
-  const { categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual, getTotalTargets, getMacroFromTargets, valuesHidden } = usePortfolio();
+  const { categoryTargets, setCategoryTarget, getCategoryValue, getTotalValue, currency, syncTargetsToActual, getTotalTargets, getMacroFromTargets, valuesHidden, assets, getValueInCurrency } = usePortfolio();
   const total = getTotalValue();
   const totalTargets = getTotalTargets();
   const macroTargets = getMacroFromTargets();
