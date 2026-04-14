@@ -7,7 +7,7 @@ import { PortfolioOverview } from '@/components/PortfolioOverview';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PaletteSelector } from '@/components/PaletteSelector';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
